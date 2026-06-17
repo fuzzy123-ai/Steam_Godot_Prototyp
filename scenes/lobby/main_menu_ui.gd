@@ -13,12 +13,23 @@ signal quit_requested
 @export var address_input: LineEdit
 @export var color_picker: ColorPicker
 @export var main_container: Control
+@export var color_picker_label: Label
 
 var address: String: get = get_address
 
 func _ready():
 	visibility_changed.connect(_on_visibility_changed)
+	_setup_color_picker()
+
+func _setup_color_picker() -> void:
 	color_picker.color_changed.connect(_on_color_changed)
+	_select_random_color()
+
+func _select_random_color() -> void:
+	var personal_color := Online.personal_player_data.color
+	if personal_color != Color.WHITE: color_picker.color = personal_color
+	else: color_picker.color = Color.from_hsv(randf(), 0.8, 0.9)
+	color_picker.color_changed.emit(color_picker.color)
 
 func _on_visibility_changed():
 	if visible: grab_focus()
@@ -44,7 +55,10 @@ func set_loading(value: bool) -> void:
 
 func get_address() -> String: return address_input.text.strip_edges()
 
-func _on_color_changed(color: Color): Online.personal_player_data.color = color
+func _on_color_changed(color: Color):
+	Online.personal_player_data.color = color
+	color_picker_label.self_modulate = color
+
 
 func _on_host_online_pressed(): host_online_requested.emit()
 

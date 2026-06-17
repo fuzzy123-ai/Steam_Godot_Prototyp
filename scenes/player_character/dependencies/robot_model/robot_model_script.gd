@@ -25,7 +25,7 @@ func _process(delta: float) -> void:
 		top_level = false
 		self.position = Vector3.ZERO
 	
-	if not is_multiplayer_authority(): return
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority(): return
 	if player and animation_player: _update_animations()
 
 func _update_animations() -> void:
@@ -91,7 +91,7 @@ func _on_peer_connected(_peer: int) -> void:
 func _ready() -> void:
 	_update_mesh_view.call_deferred()
 	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_connected.connect(func(peer: int): if is_multiplayer_authority(): _set_mesh_color.rpc(curr_color))
+	multiplayer.peer_connected.connect(func(_id: int) -> void: if is_multiplayer_authority(): _set_mesh_color.rpc(curr_color))
 
 func _update_mesh_view() -> void:
 	for child in skeleton_3d.get_children():
@@ -101,11 +101,12 @@ func _update_mesh_view() -> void:
 	var bone_names := [
 		"Head",
 		"HeadTop",
-		"HeadEyes",
 	]
+
 	for bone_name in bone_names:
 		var new_scale := Vector3(0,0,0) if is_multiplayer_authority() else Vector3.ONE
-		skeleton_3d.set_bone_pose_scale(skeleton_3d.find_bone(bone_name),new_scale)
+		var bone_index := skeleton_3d.find_bone(bone_name)
+		if bone_index >= 0: skeleton_3d.set_bone_pose_scale(skeleton_3d.find_bone(bone_name),new_scale)
 	if is_multiplayer_authority():
 		_set_mesh_color.rpc(Online.personal_player_data.color)
 

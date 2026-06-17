@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://ct3rwravhrwk1" path="res://addons/JehenoAdvancedFirstPersonController(Modified)/MovementModifiers/jumpPads/directionalJumpPad/directional_jump_pad_scene.tscn" id="6_sekq8"]
 [ext_resource type="PackedScene" uid="uid://djqwgcp3ehij1" path="res://addons/JehenoAdvancedFirstPersonController(Modified)/MovementModifiers/slipperyZone/slippery_zone_scene.tscn" id="7_5nxcp"]
 [ext_resource type="PackedScene" uid="uid://d4gavwq81shmv" path="res://addons/JehenoAdvancedFirstPersonController(Modified)/MovementModifiers/conveyorZone/conveyor_zone_scene.tscn" id="8_e624k"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://common/themes/main_theme/main_theme.tres" id="11_sekq8"]
 [ext_resource type="PackedScene" uid="uid://da2jeeyxxp2s2" path="res://scenes/ui/steam_friends_list/steam_friends_list.tscn" id="12_a0ps3"]
 [ext_resource type="FontFile" uid="uid://cfsikuv13gwnw" path="res://common/fonts/Kurland.ttf" id="13_1xog8"]
 [ext_resource type="PackedScene" uid="uid://d4ejx402qfkwa" path="res://scenes/ui/steam_friends_list/invite_popup/invite_popup.tscn" id="13_7ewij"]
@@ -570,6 +571,7 @@ mouse_filter = 2
 
 [node name="InGameUI" type="Control" parent="CanvasLayer/UI" unique_id=334839678]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -599,7 +601,6 @@ offset_bottom = 1080.0
 grow_horizontal = 1
 grow_vertical = 1
 size_flags_horizontal = 3
-mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/UI/InGameUI/Panel" unique_id=992869685]
 layout_mode = 1
@@ -615,58 +616,64 @@ mouse_filter = 2
 theme_override_constants/margin_top = 64
 theme_override_constants/margin_right = 64
 
-[node name="Control" type="Control" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer" unique_id=581376372]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer" unique_id=246825406]
 layout_mode = 2
+size_flags_horizontal = 8
+theme_override_constants/separation = 32
 
-[node name="ExitLobbyButton" type="Button" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/Control" unique_id=1835734236]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.4787053
-anchor_top = -0.022916667
-anchor_right = 1.0698466
-anchor_bottom = 0.14583333
-grow_horizontal = 0
+[node name="ExitLobbyButton" type="Button" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/VBoxContainer" unique_id=1835734236]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
 size_flags_vertical = 0
 mouse_default_cursor_shape = 2
-theme_override_constants/outline_size = 32
-theme_override_fonts/font = ExtResource("13_1xog8")
-theme_override_font_sizes/font_size = 32
+theme = ExtResource("11_sekq8")
+theme_override_colors/font_pressed_color = Color(1, 0.5492647, 0.545648, 1)
+theme_override_colors/font_hover_color = Color(0.9999867, 0.31112897, 0.35298774, 1)
+theme_override_constants/outline_size = 16
 text = "EXIT LOBBY"
-metadata/_edit_use_anchors_ = true
 
-[node name="LobbyInfoButton" type="Button" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/Control" unique_id=902977002]
+[node name="LobbyInfoButton" type="Button" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/VBoxContainer" unique_id=902977002]
 unique_name_in_owner = true
 show_behind_parent = true
-custom_minimum_size = Vector2(347, 81)
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.4787053
-anchor_top = 0.21666667
-anchor_right = 1.0698466
-anchor_bottom = 0.43958333
-grow_horizontal = 2
-grow_vertical = 2
+custom_minimum_size = Vector2(347, 126)
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 mouse_default_cursor_shape = 2
-theme_override_constants/outline_size = 32
-theme_override_fonts/font = ExtResource("13_1xog8")
-theme_override_font_sizes/font_size = 32
+theme = ExtResource("11_sekq8")
+theme_override_constants/outline_size = 16
+theme_override_font_sizes/font_size = 28
 text = "IP/Lobby ID: 
 xxx.x.x.x"
-metadata/_edit_use_anchors_ = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/Control" unique_id=1781865230]
-layout_mode = 0
-offset_right = 178.0
-offset_bottom = 42.0
-grow_horizontal = 0
-mouse_filter = 2
-theme_override_constants/separation = 64
+[node name="LobbyInfoCopyLabel" type="Label" parent="CanvasLayer/UI/InGameUI/Panel/MarginContainer/VBoxContainer/LobbyInfoButton" unique_id=237484094]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -85.0
+offset_top = -17.0
+offset_right = 85.0
+offset_bottom = 17.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset_ratio = Vector2(0.5, 0.5)
+size_flags_vertical = 0
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+theme = ExtResource("11_sekq8")
+theme_override_constants/outline_size = 16
+theme_override_fonts/font = ExtResource("13_1xog8")
+theme_override_font_sizes/font_size = 32
+text = "COPIED!"
+horizontal_alignment = 1
 
 [node name="MainMenuUI" parent="CanvasLayer/UI" unique_id=1236732426 instance=ExtResource("2_ukx7c")]
 unique_name_in_owner = true
-visible = false
 layout_mode = 1
 mouse_filter = 2
 
@@ -684,5 +691,5 @@ grow_horizontal = 2
 pivot_offset_ratio = Vector2(0.5, 0.5)
 mouse_filter = 2
 
-[connection signal="pressed" from="CanvasLayer/UI/InGameUI/Panel/MarginContainer/Control/ExitLobbyButton" to="." method="_on_exit_lobby_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/UI/InGameUI/Panel/MarginContainer/Control/LobbyInfoButton" to="." method="_on_lobby_info_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/UI/InGameUI/Panel/MarginContainer/VBoxContainer/ExitLobbyButton" to="." method="_on_exit_lobby_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/UI/InGameUI/Panel/MarginContainer/VBoxContainer/LobbyInfoButton" to="." method="_on_lobby_info_button_pressed"]

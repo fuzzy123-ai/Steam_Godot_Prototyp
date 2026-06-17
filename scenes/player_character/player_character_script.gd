@@ -241,12 +241,6 @@ func input_actions_check() -> void:
 				assert(false, "There's an undefined input action")
 				
 			if not registered_input_actions.has(input_action):
-				var key_names = default_input_actions[input_action].map(func(key):
-					return OS.get_keycode_string(key)
-				)
-				
-				push_warning("'{input}' missing in InputMap, or input action wrongly named in the editor.\nAdding the '{input}' to runtime InputMap temporarily with the key/s: {keys}"
-				.format({"input": input_action, "keys": String(", ").join(key_names)}))
 				
 				InputMap.add_action(input_action)
 				for keycode in default_input_actions[input_action]:
@@ -257,14 +251,17 @@ func input_actions_check() -> void:
 @onready var character_model: Node3D = %CharacterModel
 func _update_model_visuals() -> void:
 	character_model.rotation_degrees.y = cam_holder.rotation_degrees.y
-	nick_label.visible = not is_multiplayer_authority()
-	if is_multiplayer_authority():
-		nick_label.visible = not is_multiplayer_authority()
+
+	nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
+	if not multiplayer.has_multiplayer_peer() or is_multiplayer_authority():
+		nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
 		nick_label.text = Online.personal_player_data.display_name
 	
 func _process(delta: float) -> void:
+	
 	_update_model_visuals()
-	if not is_multiplayer_authority(): return
+	
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority(): return
 
 	wallrun_timer(delta)
 	
@@ -273,11 +270,13 @@ func _process(delta: float) -> void:
 	dash_timer(delta)
 	
 func _physics_process(_delta: float) -> void:
-	if not is_multiplayer_authority(): return
+	
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority(): return
+	
 	modify_physics_properties()
 
 	move_and_slide()
-	
+
 func wallrun_timer(delta : float) -> void:
 	if !can_wallrun:
 		if time_bef_can_wallrun_again > 0.0: time_bef_can_wallrun_again -= delta

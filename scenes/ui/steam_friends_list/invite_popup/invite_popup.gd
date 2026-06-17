@@ -28,7 +28,6 @@ func _on_lobby_invite_received(lobby_id: int, sender_id: int) -> void:
 func _accept_request() -> void:
 	if Online.steam_lobby_id: Online.leave_lobby()
 	Online.join_steam_lobby(request_lobby_id)
-	
 	_close_request()
 
 func _close_request() -> void:
@@ -39,7 +38,7 @@ func _close_request() -> void:
 	request_handled.emit()
 
 func _on_request_handled() -> void: if not request_timeout_timer.is_stopped(): request_timeout_timer.stop()
-func _update_request_info() -> void: sender_name_label.text = Steam.getFriendPersonaName(request_sender_id)
+func _update_request_info() -> void: sender_name_label.text = Steam.getFriendPersonaName(request_sender_id) if request_sender_id else ""
 func _on_request_timeout() -> void: _close_request()
 func _on_join_button_pressed() -> void: _accept_request()
 func _on_close_button_pressed() -> void: _close_request()

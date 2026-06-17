@@ -1347,8 +1347,4 @@ mesh = SubResource("SphereMesh_u7t1t")
 libraries/Robot = ExtResource("23_1dajo")
 autoplay = &"Idle"
 
-[node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=1276978646]
-
-[node name="VehicleBody3D" type="VehicleBody3D" parent="RigidBody3D" unique_id=1252213658]
-
 [connection signal="change_fov" from="StateMachine" to="CameraHolder" method="change_fov"]

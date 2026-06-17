@@ -4,12 +4,14 @@ const MAX_PLAYERS: int = 12
 
 enum ErrorCodes { NO_RESPONSE, SUCCESS, FAILED, CURRENTLY_BUSY, JOIN_FAILED_SAME_OWNER_ID, STEAM_CONNECTION_ERROR }
 
-signal joined_steam_lobby
+signal joined_lobby
 signal connection_failed
 signal steam_lobby_invite_received(lobby_id: int, sender_id: int)
-signal joining_lobby
 signal lobby_hosting_response(error_code: ErrorCodes)
 signal lobby_join_response(error_code: ErrorCodes)
+signal player_connected(player_data: PlayerData)
+signal player_disconnected(player_data: PlayerData)
+signal server_disconnected
 
 var _is_busy: bool = false
 var steam_lobby_id: int = 0
@@ -31,10 +33,8 @@ func players_to_data_dicts() -> Array[Dictionary]: # Returns an array with all t
 			personal_player_data = PlayerData.new()
 			personal_player_data.steam_id = Steam.getSteamID()
 			personal_player_data.display_name = Steam.getPersonaName()
-		personal_player_data.multiplayer_id = 0 if not multiplayer else multiplayer.get_unique_id()
+		personal_player_data.multiplayer_id = 0 if not multiplayer.has_multiplayer_peer() else multiplayer.get_unique_id()
 		return personal_player_data
-
-func is_offline() -> bool: return multiplayer == null or multiplayer.multiplayer_peer == null
 
 func _ready() -> void:
 	_setup_local_hosting_signals()
@@ -45,15 +45,14 @@ func _ready() -> void:
 	Steam.lobby_joined.connect(_on_steam_lobby_join_response)
 	Steam.join_requested.connect(join_steam_lobby)
 
-
 func leave_lobby() -> void:
 	is_host = false
+	if not steam_lobby_id and not multiplayer.has_multiplayer_peer(): return
 	Steam.leaveLobby(steam_lobby_id)
 	if multiplayer.multiplayer_peer: multiplayer.multiplayer_peer.close()
 	if steam_multiplayer_peer: steam_multiplayer_peer.close()
 	steam_lobby_id = 0
 	player_disconnected.emit(personal_player_data)
-
 
 func host_steam_lobby() -> ErrorCodes:
 	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
@@ -61,16 +60,14 @@ func host_steam_lobby() -> ErrorCodes:
 	_is_busy = true
 	Steam.createLobby(Steam.LOBBY_TYPE_FRIENDS_ONLY, MAX_PLAYERS)
 	var error: ErrorCodes = await lobby_hosting_response
-	if error == ErrorCodes.SUCCESS: joined_steam_lobby.emit()
+	if error == ErrorCodes.SUCCESS: joined_lobby.emit()
 	else: is_host = false
 	_is_busy = false
 	return error
 
-
 func join_steam_lobby(lobby_id: int = 0, ..._args) -> ErrorCodes:
 	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
 	is_joining = true
-	joining_lobby.emit()
 	if lobby_id != steam_lobby_id and steam_lobby_id != 0: leave_lobby()
 	is_host = false
 	steam_lobby_id = lobby_id
@@ -78,7 +75,7 @@ func join_steam_lobby(lobby_id: int = 0, ..._args) -> ErrorCodes:
 	Steam.joinLobby(lobby_id)
 	var error: ErrorCodes = await lobby_join_response
 	is_joining = false
-	if error == ErrorCodes.SUCCESS: joined_steam_lobby.emit()
+	if error == ErrorCodes.SUCCESS: joined_lobby.emit()
 	_is_busy = false
 	return error
 
@@ -124,18 +121,6 @@ func _on_steam_lobby_join_response(lobby_id: int, _permissions: int, _locked: bo
 			new_steam_peer.close()
 			Steam.leaveLobby(steam_lobby_id)
 			lobby_join_response.emit(ErrorCodes.FAILED)
-	
-
-func get_error_message(error_code: ErrorCodes) -> String:
-	var message: String
-	match error_code:
-		ErrorCodes.SUCCESS: message = "Success."
-		ErrorCodes.FAILED: message = "Failed."
-		ErrorCodes.JOIN_FAILED_SAME_OWNER_ID: message = "You can't join a lobby you own."
-		ErrorCodes.CURRENTLY_BUSY: message = "You're already busy with something!"
-		ErrorCodes.STEAM_CONNECTION_ERROR: message = "Error connecting with Steam."
-		_: return "Error code %s is unknown." % error_code
-	return message
 
 func create_steam_player(multiplayer_connection_id: int) -> PlayerData:
 	var player_data := PlayerData.new()
@@ -144,16 +129,11 @@ func create_steam_player(multiplayer_connection_id: int) -> PlayerData:
 	player_data.steam_id = Steam.getSteamID()
 	return player_data
 
-
 #region LOCAL HOSTING
 var local_peer := ENetMultiplayerPeer.new()
 
 const LOCAL_SERVER_ADDRESS: String = "127.0.0.1"
 const LOCAL_SERVER_PORT: int = 8080
-
-signal player_connected(player_data: PlayerData)
-signal player_disconnected(player_data: PlayerData)
-signal server_disconnected
 
 func _setup_local_hosting_signals() -> void:
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
@@ -184,12 +164,10 @@ func join_local_lobby() -> ErrorCodes:
 	_is_busy = true
 	var has_local_host := await check_if_host_exists(LOCAL_SERVER_ADDRESS,LOCAL_SERVER_PORT)
 	_is_busy = false
-	
 	if not has_local_host: return ErrorCodes.FAILED
 	else: return join_address(LOCAL_SERVER_ADDRESS, LOCAL_SERVER_PORT)
 
 func join_address(address: String, port: int = LOCAL_SERVER_PORT) -> ErrorCodes:
-	joining_lobby.emit()
 	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
 	is_host = false
 	var response: ErrorCodes = ErrorCodes.FAILED
@@ -203,7 +181,7 @@ func join_address(address: String, port: int = LOCAL_SERVER_PORT) -> ErrorCodes:
 	multiplayer.multiplayer_peer = new_multiplayer_peer
 	response = ErrorCodes.SUCCESS
 	_register_player_data(personal_player_data.to_dict())
-	
+	joined_lobby.emit()
 	return response
 
 func _on_connected_to_server() -> void:
@@ -258,61 +236,83 @@ func _process_steam_p2p_packets() -> void:
 
 func _handle_incoming_packet(data: Dictionary) -> void:
 	match data.get("header"):
-		"PAYLOAD": _handle_payload_received(DataPayload.from_dict(data))
+		"DATA_PAYLOAD": _handle_payload_received(DataPayload.from_dict(data))
 
 func _handle_payload_received(payload: DataPayload) -> void:
 	match payload.type:
 		payload.Types.STEAM_LOBBY_INVITE:
-			var invite_steam_lobby_id: int = payload.lobby_id
-			var sender_id: int = payload.sender_steam_id
+			var invite_steam_lobby_id: int = int(payload.lobby_invite_address)
+			var sender_id: int = payload.steam_sender_id
 			steam_lobby_invite_received.emit(invite_steam_lobby_id, sender_id)
 
-func send_steam_data_payload(payload: DataPayload) -> bool:
-	var success: bool = Steam.sendP2PPacket(payload.target_steam_id, payload.packet_data, payload.send_type, payload.channel)
+func _send_steam_data_payload(payload: DataPayload) -> bool:
+	var target_steam_id: int = payload.steam_target_id
+	for player: PlayerData in players.values():
+		if player.steam_id == target_steam_id:
+			var target_persona_name := Steam.getFriendPersonaName(player.steam_id)
+			print_rich("[color=red][b]Lobby Error:[/b][/color] Failed to invite '%s' (Already in lobby)." % target_persona_name)
+			return false
+	var success: bool = Steam.sendP2PPacket(target_steam_id, payload.packet_data, payload.steam_send_type, payload.steam_packet_channel)
 	if payload.type == payload.Types.STEAM_LOBBY_INVITE: ## Also invites using Steam direct messages
-		Steam.inviteUserToLobby(payload.lobby_id, payload.target_steam_id)
+		Steam.inviteUserToLobby(int(payload.lobby_invite_address), payload.steam_target_id)
 	return success
 
 class DataPayload extends Resource: ## Custom information payload to handle requests
-	enum Types { UNDEFINED, STEAM_LOBBY_INVITE, MESSAGE }
-	var header: String = "PAYLOAD"
-	var lobby_id: int = -1
-	var type: Types = Types.UNDEFINED
-	var target_steam_id: int = -1
-	var sender_steam_id: int = -1
-	var send_type: Steam.P2PSend = Steam.P2PSend.P2P_SEND_RELIABLE
-	var channel: int = 0
+	enum Types { UNDEFINED, STEAM_LOBBY_INVITE }
+	
+	func _init() -> void: header = "DATA_PAYLOAD"
+	
+	var header: String:
+		set(value): if header != value: header = value; _update_content("header",value)
+	var lobby_invite_address: String:
+		set(value): if lobby_invite_address != value: lobby_invite_address = value; _update_content("lobby_invite_address",value)
+	var type: Types = Types.UNDEFINED:
+		set(value): if type != value: type = value; _update_content("type",value)
+	var steam_target_id: int = 0:
+		set(value): if steam_target_id != value: steam_target_id = value; _update_content("steam_target_id",value)
+	var steam_sender_id: int = 0:
+		set(value): if steam_sender_id != value: steam_sender_id = value; _update_content("steam_sender_id",value)
+	var steam_send_type: Steam.P2PSend = Steam.P2PSend.P2P_SEND_RELIABLE:
+		set(value): if steam_send_type != value: steam_send_type = value; _update_content("steam_send_type",value)
+	var steam_packet_channel: int = 0:
+		set(value): if steam_packet_channel != value: steam_packet_channel = value; _update_content("steam_packet_channel",value)
+
 	var content: Dictionary
-	var packet_data: PackedByteArray:
-		get: 
-			var data: Dictionary = {}
-			for key in content:
-				data.set(key,str(content.get(key)))
-			return var_to_bytes(data)
+	var packet_data: PackedByteArray: get = _get_packet_data
 	
-	static func from_dict(dict: Dictionary) -> DataPayload:
-		var new_payload := DataPayload.new()
-		new_payload._apply_data(dict)
-		return new_payload
-	
-	func _apply_data(merge_data: Dictionary = {}) -> void:
-		var base_keys: Array[String] = ["header","lobby_id","target_steam_id","sender_steam_id","type","channel","send_type"]
-		for key in base_keys:
-			var value: Variant = self.get(key)
-			if value != null: content.set(key,value)
-		for key in merge_data:
-			var value: Variant = merge_data.get(key)
-			if value != null: content.set(key,value)
+	func _get_packet_data() -> PackedByteArray:
+		var data: Dictionary = {}
 		for key in content:
-			self.set(key,content.get(key))
-		
-	func send() -> bool:
-		_apply_data()
-		return Online.send_steam_data_payload(self)
-	func get_header() -> String:
-		match type:
-			Types.STEAM_LOBBY_INVITE: return "STEAM_LOBBY_INVITE"
-			_: return "UNDEFINED"
+			data.set(key,str(content.get(key)))
+		return var_to_bytes(data)
+	
+	func _update_content(content_key: String,value: Variant) -> bool:
+		if not value: content.erase(content_key)
+		else: content.set(content_key,value)
+		return true
+	
+	static func create_steam_invite_payload(invite_address: Variant, steam_id_to_invite: int, invite_send_type := Steam.P2PSend.P2P_SEND_RELIABLE, invite_packet_channel: int = 0) -> DataPayload:
+		invite_address = str(invite_address)
+		if not invite_address: return
+		var invite_payload := DataPayload.new()
+		invite_payload.type = Types.STEAM_LOBBY_INVITE
+		invite_payload.lobby_invite_address = invite_address
+		invite_payload.steam_target_id = steam_id_to_invite
+		invite_payload.steam_sender_id = Steam.getSteamID()
+		invite_payload.steam_send_type = invite_send_type
+		invite_payload.steam_packet_channel = invite_packet_channel
+		return invite_payload
+
+	static func from_dict(dict: Dictionary) -> DataPayload:
+		# Instantiates a DataPayload and configures it based on the given dictionary.
+		var new_payload := DataPayload.new()
+		for key in dict:
+			var value: Variant = dict.get(key)
+			if value == null: continue
+			new_payload.set(key,value)
+		return new_payload
+
+	func send() -> bool: return Online._send_steam_data_payload(self)
 
 
 

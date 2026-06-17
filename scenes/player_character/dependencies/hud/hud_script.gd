@@ -30,9 +30,10 @@ class_name HUD
 @onready var camera_bob_vertical_offset_label_text: Label = %CameraBobVerticalOffsetLabelText
 @onready var speed_lines_container: ColorRect = %SpeedLinesContainer
 
+func _ready() -> void: _cicle_ui(0)
 
 func _process(_delta : float) -> void:
-	if not is_multiplayer_authority(): if visible: hide(); return
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority(): if visible: hide(); return
 	display_current_FPS()
 	display_properties()
 
@@ -71,16 +72,16 @@ func round_to_3_decimals(value: float) -> float:
 #region UI Components Toggling
 var _ui_cicle_index := 0
 
-func _cicle_ui() -> void:
+func _cicle_ui(new_cicle_index: int = _ui_cicle_index + 1) -> void:
 	if not is_multiplayer_authority(): return
 	var ui_components: Array[Node] = [player_info,frames_info,crosshair]
 	var components_states_matrix: Array[Array] = [
+		[false, true, true],
 		[true, true, true],
 		[false, false, false],
 		[false, false, true],
-		[false, true, true],
 	]
-	_ui_cicle_index = wrapi(_ui_cicle_index+1,0,components_states_matrix.size())
+	_ui_cicle_index = wrapi(new_cicle_index,0,components_states_matrix.size())
 	for i in ui_components.size():
 		ui_components[i].visible = components_states_matrix[_ui_cicle_index][i]
 

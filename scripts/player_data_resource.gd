@@ -1,18 +1,12 @@
 extends Resource
 class_name PlayerData
 
-@export var instance_id: int = 0
 @export var multiplayer_id: int = 0
 @export var display_name: String = "Player"
 @export var steam_id: int = -1
 @export var color: Color = Color.WHITE
 
-static var base_dict := {
-		"instance_id": 0,
-		"multiplayer_id": 0,
-		"display_name": "Player",
-		"steam_id": -1,
-}
+var _custom_variables: Array[String]: get = _get_custom_variables # Lists the resource custom variable names
 
 static func from_dict(dict: Dictionary) -> PlayerData:
 	var player_data := PlayerData.new()
@@ -30,8 +24,22 @@ static func apply_data_to_node(data: PlayerData, node: Node) -> void:
 
 func to_dict() -> Dictionary:
 	var dict := {}
-	for key in base_dict:
-		var value: Variant = self.get(key)
-		if value == null: value = base_dict.get(key)
-		dict[key] = value
+	for var_name in _custom_variables:
+		var value: Variant = self.get(var_name)
+		if value != null: dict.set(var_name,value)
 	return dict
+
+func _setup_custom_variables() -> void:
+	var new_custom_variables: Array[String]
+	var script: Script = self.get_script()
+	if not script: return
+	for property in script.get_script_property_list():
+		if property.usage and PROPERTY_USAGE_SCRIPT_VARIABLE:
+			var prop_name := str(property.name).strip_edges()
+			if prop_name.begins_with("_") or prop_name in new_custom_variables: continue
+			new_custom_variables.append(prop_name)
+	_custom_variables = new_custom_variables
+
+func _get_custom_variables() -> Array[String]:
+	if _custom_variables.is_empty(): _setup_custom_variables()
+	return _custom_variables

@@ -18,6 +18,13 @@ var display_name: String = "Player"
 var status: Steam.PersonaState = Steam.PersonaState.PERSONA_STATE_OFFLINE
 var _loading: bool = false
 
+func _ready() -> void:
+	Online.player_connected.connect(_on_player_connected)
+	Online.player_disconnected.connect(_on_player_disconnected)
+
+func _on_player_connected(_player_data: PlayerData) -> void: _update_invite_button()
+func _on_player_disconnected(_player_data: PlayerData) -> void: _update_invite_button()
+
 func show_loading_visuals() -> void:
 	control_loader_effect.active = true
 
@@ -39,9 +46,27 @@ func read_friend_id(friend_id: int) -> void:
 	Steam.avatar_loaded.connect(_on_avatar_loaded)
 	Steam.getPlayerAvatar(Steam.AVATAR_SMALL, steam_id)
 	
-	var disable_invite_to_offline := false # If true will disable the invite button to players that are offline on steam
-	if disable_invite_to_offline and status == Steam.PersonaState.PERSONA_STATE_OFFLINE: invite_button.disabled = true
-	else: invite_button.disabled = false
+	_update_invite_button()
+	
+func _update_invite_button() -> void:
+	var should_disable := false 
+	var disable_invite_to_offline := false # If true the invite button is disabled for offline players
+	if disable_invite_to_offline and status == Steam.PersonaState.PERSONA_STATE_OFFLINE:
+		should_disable = true
+	else:
+		# Checks if the player is in the lobby already
+		for player_data: PlayerData in Online.players.values():
+			if player_data.steam_id != steam_id: continue
+			should_disable = true
+			break
+	
+	if should_disable:
+		invite_button.disabled = true
+		invite_button.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	else:
+		invite_button.disabled = false
+		invite_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
 
 func _update_visuals() -> void:
 	status_control_node.modulate = get_status_color(status)
@@ -99,18 +124,11 @@ func get_status_color(status_code: Steam.PersonaState) -> Color:
 
 func _on_invite_button_pressed() -> void: _invite_to_lobby()
 
-func _invite_to_lobby():
-	
+func _invite_to_lobby() -> void:
 	var lobby_id := Online.steam_lobby_id
-
 	if lobby_id == 0:
-		printerr("Invite: No active lobby found.")
+		print_rich("[color=red][b]Lobby Invite Error:[/b][/color] Invalid lobby id.")
 		return
-		
-	# Send the invite directly to the target 64-bit Steam ID
-	var payload := Online.DataPayload.new()
-	payload.type = payload.Types.STEAM_LOBBY_INVITE
-	payload.sender_steam_id = Steam.getSteamID()
-	payload.target_steam_id = steam_id
-	payload.lobby_id = lobby_id
+	
+	var payload := Online.DataPayload.create_steam_invite_payload(lobby_id,steam_id)
 	payload.send()

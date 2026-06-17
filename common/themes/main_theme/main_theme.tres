@@ -8,7 +8,7 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -17,12 +17,12 @@ corner_radius_bottom_left = 10
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lopid"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_myavk"]
-bg_color = Color(0.094, 0.275, 0.639, 1)
+bg_color = Color(1, 1, 1, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -37,7 +37,7 @@ border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -47,12 +47,12 @@ expand_margin_top = 2.0
 expand_margin_right = 5.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_208pi"]
-bg_color = Color(1, 0.411765, 0.45098, 1)
+bg_color = Color(0.5884862, 0.7153485, 1.12312, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -87,7 +87,7 @@ expand_margin_right = 5.0
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hbuoo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nas17"]
-bg_color = Color(0.094, 0.275, 0.639, 1)
+bg_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 
@@ -107,7 +107,7 @@ corner_radius_top_left = 5
 corner_radius_top_right = 5
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_k0c1y"]
-color = Color(0.094, 0.275, 0.639, 1)
+color = Color(0.852, 0.903, 0.994, 1)
 thickness = 2
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_m820h"]
@@ -132,7 +132,7 @@ corner_radius_top_right = 5
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rga2m"]
 content_margin_left = 10.0
 content_margin_right = 10.0
-bg_color = Color(0.0823529, 0.470588, 0.54902, 0.784314)
+bg_color = Color(0.29612437, 0.831241, 0.9507423, 0)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -146,12 +146,12 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uaw8g"]
-bg_color = Color(0.99, 0.99, 0.99, 1)
+bg_color = Color(0.59607846, 0.6431373, 0.7529412, 0.3019608)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -173,7 +173,7 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.094, 0.275, 0.639, 1)
+border_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -240,7 +240,7 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y214y"]
-bg_color = Color(0.094, 0.275, 0.639, 1)
+bg_color = Color(0.852, 0.903, 0.994, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 
@@ -262,7 +262,7 @@ corner_radius_top_right = 5
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_s6qsw"]
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_cwkfx"]
-color = Color(0.094, 0.275, 0.639, 1)
+color = Color(0.852, 0.903, 0.994, 1)
 thickness = 2
 vertical = true
 
@@ -285,35 +285,34 @@ corner_radius_top_right = 5
 
 [resource]
 default_font = ExtResource("6_5qyvn")
-default_font_size = 32
-Button/colors/font_color = Color(0.094, 0.275, 0.639, 1)
+default_font_size = 24
+Button/colors/font_color = Color(0.8509804, 0.9019608, 0.99607843, 1)
 Button/colors/font_disabled_color = Color(0.27451, 0.258824, 0.368627, 0.392157)
-Button/colors/font_focus_color = Color(0.094, 0.275, 0.639, 1)
-Button/colors/font_hover_color = Color(0.99, 0.99, 0.99, 1)
-Button/colors/font_hover_pressed_color = Color(0.094, 0.275, 0.639, 1)
-Button/colors/font_pressed_color = Color(0.094, 0.275, 0.639, 1)
+Button/colors/font_focus_color = Color(0.8509804, 0.9019608, 0.99215686, 1)
+Button/colors/font_hover_color = Color(0.35553274, 0.56085265, 0.94886285, 1)
+Button/colors/font_hover_pressed_color = Color(0.8509804, 0.9019608, 0.99607843, 1)
 Button/font_sizes/font_size = 32
 Button/styles/disabled = SubResource("StyleBoxFlat_k0c1y")
 Button/styles/focus = SubResource("StyleBoxEmpty_lopid")
 Button/styles/hover = SubResource("StyleBoxFlat_myavk")
 Button/styles/normal = SubResource("StyleBoxFlat_lopid")
 Button/styles/pressed = SubResource("StyleBoxFlat_208pi")
-CheckBox/colors/font_color = Color(0.094, 0.275, 0.639, 1)
-CheckBox/colors/font_focus_color = Color(0.094, 0.275, 0.639, 1)
-CheckBox/colors/font_hover_color = Color(0.094, 0.275, 0.639, 1)
-CheckBox/colors/font_hover_pressed_color = Color(0.094, 0.275, 0.639, 1)
-CheckBox/colors/font_pressed_color = Color(0.094, 0.275, 0.639, 1)
+CheckBox/colors/font_color = Color(0.852, 0.903, 0.994, 1)
+CheckBox/colors/font_focus_color = Color(0.852, 0.903, 0.994, 1)
+CheckBox/colors/font_hover_color = Color(0.852, 0.903, 0.994, 1)
+CheckBox/colors/font_hover_pressed_color = Color(0.852, 0.903, 0.994, 1)
+CheckBox/colors/font_pressed_color = Color(0.852, 0.903, 0.994, 1)
 CheckBox/icons/checked = SubResource("CompressedTexture2D_6pi7m")
 CheckBox/icons/unchecked = SubResource("CompressedTexture2D_erhyn")
 CheckBox/styles/hover = SubResource("StyleBoxEmpty_fmcpx")
 CheckBox/styles/hover_pressed = SubResource("StyleBoxEmpty_nas17")
 CheckBox/styles/normal = SubResource("StyleBoxEmpty_adq26")
 CheckBox/styles/pressed = SubResource("StyleBoxEmpty_wjpxi")
-CheckButton/colors/font_color = Color(0.094, 0.275, 0.639, 1)
-CheckButton/colors/font_focus_color = Color(0.094, 0.275, 0.639, 1)
-CheckButton/colors/font_hover_color = Color(0.094, 0.275, 0.639, 1)
-CheckButton/colors/font_hover_pressed_color = Color(0.094, 0.275, 0.639, 1)
-CheckButton/colors/font_pressed_color = Color(0.094, 0.275, 0.639, 1)
+CheckButton/colors/font_color = Color(0.852, 0.903, 0.994, 1)
+CheckButton/colors/font_focus_color = Color(0.852, 0.903, 0.994, 1)
+CheckButton/colors/font_hover_color = Color(0.852, 0.903, 0.994, 1)
+CheckButton/colors/font_hover_pressed_color = Color(0.852, 0.903, 0.994, 1)
+CheckButton/colors/font_pressed_color = Color(0.852, 0.903, 0.994, 1)
 CheckButton/icons/checked = SubResource("CompressedTexture2D_xevg1")
 CheckButton/icons/unchecked = SubResource("CompressedTexture2D_xlhbd")
 CheckButton/styles/focus = SubResource("StyleBoxEmpty_k0c1y")
@@ -330,23 +329,24 @@ HSlider/icons/grabber = SubResource("CompressedTexture2D_m820h")
 HSlider/styles/grabber_area = SubResource("StyleBoxFlat_cwkfx")
 HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_1b0k0")
 HSlider/styles/slider = SubResource("StyleBoxFlat_14r85")
-Label/colors/font_color = Color(0.094, 0.275, 0.639, 1)
-LineEdit/colors/caret_color = Color(0.094, 0.275, 0.639, 1)
-LineEdit/colors/clear_button_color_pressed = Color(0.094, 0.275, 0.639, 1)
-LineEdit/colors/font_color = Color(0.094, 0.275, 0.639, 1)
-LineEdit/colors/font_placeholder_color = Color(1, 0.933333, 0.8, 0.392157)
-LineEdit/colors/font_selected_color = Color(0.094, 0.275, 0.639, 1)
+Label/colors/font_color = Color(0.852, 0.903, 0.994, 1)
+LineEdit/colors/caret_color = Color(1, 1, 1, 1)
+LineEdit/colors/clear_button_color_pressed = Color(0, 0, 0, 1)
+LineEdit/colors/font_color = Color(0.66482836, 0.77903587, 0.9835389, 1)
+LineEdit/colors/font_placeholder_color = Color(1, 1, 1, 0.41568628)
+LineEdit/colors/font_selected_color = Color(0, 0, 0, 1)
 LineEdit/colors/selection_color = Color(1, 0.690196, 0.639216, 1)
+LineEdit/constants/caret_width = 2
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_b3cdw")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_rga2m")
 LineEdit/styles/read_only = SubResource("StyleBoxFlat_41273")
 Panel/styles/panel = SubResource("StyleBoxFlat_uaw8g")
-ProgressBar/colors/font_color = Color(0.094, 0.275, 0.639, 1)
+ProgressBar/colors/font_color = Color(0.852, 0.903, 0.994, 1)
 ProgressBar/styles/background = SubResource("StyleBoxFlat_hbuoo")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_fmcpx")
 TabContainer/colors/font_disabled_color = Color(1, 0.933333, 0.8, 0.392157)
-TabContainer/colors/font_hovered_color = Color(0.094, 0.275, 0.639, 1)
-TabContainer/colors/font_selected_color = Color(0.094, 0.275, 0.639, 1)
+TabContainer/colors/font_hovered_color = Color(0.852, 0.903, 0.994, 1)
+TabContainer/colors/font_selected_color = Color(0.852, 0.903, 0.994, 1)
 TabContainer/colors/font_unselected_color = Color(0.72, 0.67200005, 0.57600003, 1)
 TabContainer/constants/side_margin = 64
 TabContainer/constants/tab_separation = 36
@@ -357,11 +357,11 @@ TabContainer/styles/tab_hovered = SubResource("StyleBoxFlat_pltt4")
 TabContainer/styles/tab_selected = SubResource("StyleBoxFlat_yhwjn")
 TabContainer/styles/tab_unselected = SubResource("StyleBoxFlat_mqagu")
 TextEdit/colors/background_color = Color(0, 0, 0, 0)
-TextEdit/colors/caret_color = Color(0.094, 0.275, 0.639, 1)
-TextEdit/colors/font_color = Color(0.094, 0.275, 0.639, 1)
+TextEdit/colors/caret_color = Color(0.852, 0.903, 0.994, 1)
+TextEdit/colors/font_color = Color(0.852, 0.903, 0.994, 1)
 TextEdit/colors/font_placeholder_color = Color(1, 0.933333, 0.8, 0.392157)
 TextEdit/colors/font_readonly_color = Color(1, 0.933333, 0.8, 0.392157)
-TextEdit/colors/font_selected_color = Color(0.094, 0.275, 0.639, 1)
+TextEdit/colors/font_selected_color = Color(0.852, 0.903, 0.994, 1)
 TextEdit/colors/search_result_color = Color(1, 0.690196, 0.639216, 1)
 TextEdit/colors/selection_color = Color(1, 0.690196, 0.639216, 1)
 TextEdit/styles/focus = SubResource("StyleBoxEmpty_l34ym")

@@ -2,18 +2,18 @@ extends Control
 class_name ControlLoaderEffect
 
 @export var active := true:
-	set(value): if active != value: active = value; set_process(active); call_deferred("_update_visuals")
+	set(value): if active != value: active = value; set_process(active); _update_visuals.call_deferred()
 @export_storage var loader_rect: CanvasItem
 @export var reference_node: Control
 
 var _tween: Tween
-func _enter_tree() -> void: set_process(active); call_deferred("_update_visuals")
+
+func _enter_tree() -> void: set_process(active); _update_visuals.call_deferred()
 func _ready() -> void: _update_visuals.call_deferred()
 
 func _process(_delta: float) -> void:
 	if not active: return
 	if not is_instance_valid(reference_node): return
-
 
 func _fit_reference() -> void:
 	if not is_instance_valid(reference_node): return
@@ -25,7 +25,7 @@ func _fit_reference() -> void:
 	loader_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 func _update_visuals() -> void:
-	_fit_reference()
+	_fit_reference.call_deferred()
 	if active: self.visible = true
 	if is_instance_valid(_tween): _tween.stop()
 	var current_material: ShaderMaterial = material

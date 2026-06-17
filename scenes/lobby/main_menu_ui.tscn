@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://debd8dnm3d5ik"]
 
 [ext_resource type="FontFile" uid="uid://cfsikuv13gwnw" path="res://common/fonts/Kurland.ttf" id="1_font"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://common/themes/main_theme/main_theme.tres" id="1_fvh1d"]
 [ext_resource type="Script" uid="uid://wfj6b11wkwx2" path="res://scenes/lobby/main_menu_ui.gd" id="2_script"]
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_npnbc"]
 color = Color(0, 0, 0, 0)
 
-[node name="MainMenuUI" type="Control" unique_id=836327695 node_paths=PackedStringArray("address_input", "color_picker", "main_container")]
+[node name="MainMenuUI" type="Control" unique_id=836327695 node_paths=PackedStringArray("address_input", "color_picker", "main_container", "color_picker_label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,10 +15,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 1
+theme = ExtResource("1_fvh1d")
 script = ExtResource("2_script")
-address_input = NodePath("MainContainer/MainMenu/AddressOption/AddressInput")
-color_picker = NodePath("MainContainer/MainMenu/ColorOption/Control/ColorPicker")
-main_container = NodePath("MainContainer")
+address_input = NodePath("MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer/HBoxContainer/AddressInput")
+color_picker = NodePath("MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer/MarginContainer/Control/ColorPicker")
+main_container = NodePath("MarginContainer/MainContainer")
+color_picker_label = NodePath("MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer/ColorPickerLabel")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1013543866]
 layout_mode = 1
@@ -28,144 +31,136 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0901961, 0.0901961, 0.0901961, 1)
 
-[node name="MainContainer" type="VBoxContainer" parent="." unique_id=952908122]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=850895964]
 layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -257.0
-offset_bottom = 257.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="MainContainer" type="VBoxContainer" parent="MarginContainer" unique_id=952908122]
+layout_mode = 2
 theme_override_constants/separation = 50
 alignment = 1
 
-[node name="Label" type="Label" parent="MainContainer" unique_id=906079098]
+[node name="Label" type="Label" parent="MarginContainer/MainContainer" unique_id=906079098]
 layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 0
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 70
-text = "Steam/Local Multiplayer Lobby"
+theme_override_font_sizes/font_size = 78
+text = "Multiplayer Lobby Template"
 
-[node name="MainMenu" type="VBoxContainer" parent="MainContainer" unique_id=917344490]
-custom_minimum_size = Vector2(600, 0)
+[node name="MainMenu" type="VBoxContainer" parent="MarginContainer/MainContainer" unique_id=917344490]
+custom_minimum_size = Vector2(900, 0)
 layout_direction = 1
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_vertical = 8
 theme_override_constants/separation = 72
 alignment = 1
 
-[node name="HSeparator1" type="HSeparator" parent="MainContainer/MainMenu" unique_id=939320374]
+[node name="HSeparator1" type="HSeparator" parent="MarginContainer/MainContainer/MainMenu" unique_id=939320374]
 layout_mode = 2
 theme_override_constants/separation = 10
 theme_override_styles/separator = SubResource("StyleBoxLine_npnbc")
 
-[node name="AddressOption" type="HBoxContainer" parent="MainContainer/MainMenu" unique_id=1015432815]
+[node name="AddressOption" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu" unique_id=1015432815]
+custom_minimum_size = Vector2(700, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 alignment = 1
 
-[node name="Label" type="Label" parent="MainContainer/MainMenu/AddressOption" unique_id=1242631070]
+[node name="Label" type="Label" parent="MarginContainer/MainContainer/MainMenu/AddressOption" unique_id=1242631070]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
+theme_override_font_sizes/font_size = 36
 text = "IP/Lobby ID : "
 
-[node name="AddressInput" type="LineEdit" parent="MainContainer/MainMenu/AddressOption" unique_id=1366973983]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/AddressOption" unique_id=786129818]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
-placeholder_text = "127.0.0.1"
-alignment = 1
-expand_to_text_length = true
+size_flags_horizontal = 3
+metadata/_edit_use_anchors_ = true
 
-[node name="Join" type="Button" parent="MainContainer/MainMenu/AddressOption" unique_id=1455684702]
+[node name="Panel" type="Panel" parent="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer" unique_id=316158172]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer" unique_id=1957331199]
+layout_mode = 2
+
+[node name="AddressInput" type="LineEdit" parent="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer/HBoxContainer" unique_id=1366973983]
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 32
+placeholder_text = "127.0.0.1"
+expand_to_text_length = true
+caret_blink = true
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer/HBoxContainer/AddressInput" unique_id=795873373]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -95.0
+offset_top = -32.0
+offset_bottom = 32.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_horizontal = 8
+theme_override_constants/margin_right = 16
+
+[node name="Join" type="Button" parent="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer/HBoxContainer/AddressInput/MarginContainer" unique_id=1455684702]
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_pressed_color = Color(0, 0.52549, 0, 1)
 theme_override_colors/font_hover_color = Color(0, 0.525257, 0, 1)
 theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
 text = "JOIN"
 flat = true
 
-[node name="Buttons" type="VBoxContainer" parent="MainContainer/MainMenu" unique_id=2126759034]
-layout_mode = 2
-theme_override_constants/separation = 75
-alignment = 1
-
-[node name="Buttons2" type="HBoxContainer" parent="MainContainer/MainMenu/Buttons" unique_id=1130108616]
-layout_mode = 2
-theme_override_constants/separation = 30
-alignment = 1
-
-[node name="HostOnline" type="Button" parent="MainContainer/MainMenu/Buttons/Buttons2" unique_id=1168367450]
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_colors/font_pressed_color = Color(0, 0.52549, 0, 1)
-theme_override_colors/font_hover_color = Color(0, 0.52549, 0, 1)
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
-text = "HOST ONLINE"
-flat = true
-
-[node name="Buttons3" type="HBoxContainer" parent="MainContainer/MainMenu/Buttons" unique_id=537154579]
-layout_mode = 2
-theme_override_constants/separation = 30
-alignment = 1
-
-[node name="HostLocal" type="Button" parent="MainContainer/MainMenu/Buttons/Buttons3" unique_id=1314858288]
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_colors/font_pressed_color = Color(2.2621452e-06, 0.4754234, 0.60800445, 1)
-theme_override_colors/font_hover_color = Color(0.016755374, 0.4537323, 0.70331246, 1)
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
-text = "HOST LOCAL"
-flat = true
-
-[node name="QuitOption" type="HBoxContainer" parent="MainContainer/MainMenu" unique_id=1394832730]
+[node name="ColorOption" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu" unique_id=1252898628]
+custom_minimum_size = Vector2(0, 128)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 alignment = 1
 
-[node name="Quit" type="Button" parent="MainContainer/MainMenu/QuitOption" unique_id=1055140752]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/MainContainer/MainMenu/ColorOption" unique_id=1989099463]
 layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_colors/font_pressed_color = Color(0.858824, 0, 0, 0.862745)
-theme_override_colors/font_hover_color = Color(0.858807, 4.71681e-06, 1.15514e-06, 0.862745)
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
-text = "QUIT"
-flat = true
+mouse_filter = 2
+theme_override_constants/separation = 32
 
-[node name="ColorOption" type="HBoxContainer" parent="MainContainer/MainMenu" unique_id=1252898628]
+[node name="ColorPickerLabel" type="Label" parent="MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer" unique_id=179940617]
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 4
-alignment = 1
-
-[node name="Label" type="Label" parent="MainContainer/MainMenu/ColorOption" unique_id=179940617]
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 35
+theme_override_font_sizes/font_size = 36
 text = "Custom Color:"
 
-[node name="Control" type="Control" parent="MainContainer/MainMenu/ColorOption" unique_id=340253898]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer" unique_id=2126269329]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Control" type="Control" parent="MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer/MarginContainer" unique_id=340253898]
 custom_minimum_size = Vector2(298, 64)
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 4
-size_flags_stretch_ratio = 0.0
+size_flags_horizontal = 3
+mouse_filter = 2
 
-[node name="ColorPicker" type="ColorPicker" parent="MainContainer/MainMenu/ColorOption/Control" unique_id=182692309]
+[node name="ColorPicker" type="ColorPicker" parent="MarginContainer/MainContainer/MainMenu/ColorOption/VBoxContainer/MarginContainer/Control" unique_id=182692309]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 1
 anchors_preset = 8
@@ -181,6 +176,8 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)
 pivot_offset_ratio = Vector2(0.5, 0.5)
+mouse_filter = 0
+mouse_default_cursor_shape = 2
 alignment = 1
 edit_alpha = false
 edit_intensity = false
@@ -192,7 +189,81 @@ sliders_visible = false
 hex_visible = false
 presets_visible = false
 
-[connection signal="pressed" from="MainContainer/MainMenu/AddressOption/Join" to="." method="_on_join_pressed"]
-[connection signal="pressed" from="MainContainer/MainMenu/Buttons/Buttons2/HostOnline" to="." method="_on_host_online_pressed"]
-[connection signal="pressed" from="MainContainer/MainMenu/Buttons/Buttons3/HostLocal" to="." method="_on_host_local_pressed"]
-[connection signal="pressed" from="MainContainer/MainMenu/QuitOption/Quit" to="." method="_on_quit_pressed"]
+[node name="HostButtons" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu" unique_id=323268405]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/MainContainer/MainMenu/HostButtons" unique_id=2126759034]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer" unique_id=1130108616]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/HBoxContainer" unique_id=460747436]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HostOnline" type="Button" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/HBoxContainer/MarginContainer" unique_id=1168367450]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme = ExtResource("1_fvh1d")
+text = "HOST STEAM LOBBY"
+
+[node name="Buttons3" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer" unique_id=537154579]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/Buttons3" unique_id=275795061]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HostLocal" type="Button" parent="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/Buttons3/MarginContainer" unique_id=1314858288]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme = ExtResource("1_fvh1d")
+text = "HOST LOCAL LOBBY"
+
+[node name="QuitOption" type="HBoxContainer" parent="MarginContainer/MainContainer/MainMenu" unique_id=1394832730]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/MainMenu/QuitOption" unique_id=143304479]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+
+[node name="Quit" type="Button" parent="MarginContainer/MainContainer/MainMenu/QuitOption/MarginContainer" unique_id=1055140752]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_pressed_color = Color(0.858824, 0, 0, 0.862745)
+theme_override_colors/font_hover_color = Color(0.858807, 4.71681e-06, 1.15514e-06, 0.862745)
+text = "QUIT"
+
+[connection signal="pressed" from="MarginContainer/MainContainer/MainMenu/AddressOption/MarginContainer/HBoxContainer/AddressInput/MarginContainer/Join" to="." method="_on_join_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/HBoxContainer/MarginContainer/HostOnline" to="." method="_on_host_online_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/MainMenu/HostButtons/VBoxContainer/Buttons3/MarginContainer/HostLocal" to="." method="_on_host_local_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/MainMenu/QuitOption/MarginContainer/Quit" to="." method="_on_quit_pressed"]

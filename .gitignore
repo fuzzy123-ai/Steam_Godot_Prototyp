@@ -2,5 +2,6 @@
 .godot/
 /android/
 export_presets.cfg
-# Ignores the contents inside the local folder
+# Other ignores
 /local/*
+export_presets.cfg

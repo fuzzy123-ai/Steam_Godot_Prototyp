@@ -115,19 +115,14 @@ func input_actions_check() -> void:
 				assert(false, "There's an undefined input action")
 				
 			if not registered_input_actions.has(input_action):
-				var key_names = default_input_actions[input_action].map(func(key):
-					return OS.get_keycode_string(key)
-				)
 				
-				push_warning("'{input}' missing in InputMap, or input action wrongly named in the editor.\nAdding the '{input}' to runtime InputMap temporarily with the key/s: {keys}"
-				.format({"input": input_action, "keys": String(", ").join(key_names)}))
 				
 				InputMap.add_action(input_action)
 				for keycode in default_input_actions[input_action]:
 					var input_event_key = InputEventKey.new()
 					input_event_key.physical_keycode = keycode
 					InputMap.action_add_event(input_action, input_event_key)
-				
+
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED: return
 	rotate_y(-event.relative.x * (look_sensitivity / 10))
@@ -203,7 +198,7 @@ func reset_tween():
 		tilt_tween.kill()
 	tilt_tween = create_tween()
 	
-#i batantly copy pasted this code from StayAtHomeDev's "Godot FPS Series #2 - Camera effects" video
+#I blatantly copy pasted this code from StayAtHomeDev's "Godot FPS Series #2 - Camera effects" video
 #for more in depth explanation of what this code does, and why, check his video
 func bob(delta : float) -> void:
 	var bob_speed : float = Vector2(play_char.velocity.x, play_char.velocity.z).length()
