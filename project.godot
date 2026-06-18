@@ -11,9 +11,9 @@ config_version=5
 [application]
 
 config/name="Steam/Local Multiplayer Lobby Template"
-config/version="1.1.0"
+config/version="1.1.1"
 run/main_scene="uid://dx4y5fqwj1u30"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="uid://cdbq3kb2y7mep"
 
 [asset_placer]

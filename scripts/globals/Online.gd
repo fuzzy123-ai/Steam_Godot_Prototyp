@@ -13,11 +13,10 @@ signal player_connected(player_data: PlayerData)
 signal player_disconnected(player_data: PlayerData)
 signal server_disconnected
 
-var _is_busy: bool = false
-var steam_lobby_id: int = 0
+var is_busy: bool = false
 var is_host: bool = false
 var is_joining: bool = false
-var steam_multiplayer_peer: SteamMultiplayerPeer = null
+var steam_lobby_id: int = 0
 var players: Dictionary[int, PlayerData]: # Uses multiplayer ids as keys
 	get: players.sort(); return players
 
@@ -27,154 +26,31 @@ func players_to_data_dicts() -> Array[Dictionary]: # Returns an array with all t
 		if is_instance_valid(player_data): value.append(player_data.to_dict())
 	return value
 
-@onready var personal_player_data: PlayerData: # Your PlayerData resource
-	get:
-		if not personal_player_data:
-			personal_player_data = PlayerData.new()
-			personal_player_data.steam_id = Steam.getSteamID()
-			personal_player_data.display_name = Steam.getPersonaName()
-		personal_player_data.multiplayer_id = 0 if not multiplayer.has_multiplayer_peer() else multiplayer.get_unique_id()
-		return personal_player_data
+@onready var personal_player_data: PlayerData: get = _get_personal_player_data # Your PlayerData resource
 
 func _ready() -> void:
-	_setup_local_hosting_signals()
-	OS.set_environment("SteamAppID", str(480))
-	OS.set_environment("SteamGameID", str(480))
-	Steam.steamInit(false, 480)
-	Steam.lobby_created.connect(_on_steam_lobby_creation_response)
-	Steam.lobby_joined.connect(_on_steam_lobby_join_response)
-	Steam.join_requested.connect(join_steam_lobby)
+	_setup_steam_multiplayer()
+	_setup_local_multiplayer()
+
+func _process(_delta: float) -> void: _process_steam_p2p_packets()
 
 func leave_lobby() -> void:
 	is_host = false
 	if not steam_lobby_id and not multiplayer.has_multiplayer_peer(): return
 	Steam.leaveLobby(steam_lobby_id)
 	if multiplayer.multiplayer_peer: multiplayer.multiplayer_peer.close()
-	if steam_multiplayer_peer: steam_multiplayer_peer.close()
 	steam_lobby_id = 0
 	player_disconnected.emit(personal_player_data)
 
-func host_steam_lobby() -> ErrorCodes:
-	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
-	is_host = true
-	_is_busy = true
-	Steam.createLobby(Steam.LOBBY_TYPE_FRIENDS_ONLY, MAX_PLAYERS)
-	var error: ErrorCodes = await lobby_hosting_response
-	if error == ErrorCodes.SUCCESS: joined_lobby.emit()
-	else: is_host = false
-	_is_busy = false
-	return error
-
-func join_steam_lobby(lobby_id: int = 0, ..._args) -> ErrorCodes:
-	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
-	is_joining = true
-	if lobby_id != steam_lobby_id and steam_lobby_id != 0: leave_lobby()
-	is_host = false
-	steam_lobby_id = lobby_id
-	_is_busy = true
-	Steam.joinLobby(lobby_id)
-	var error: ErrorCodes = await lobby_join_response
-	is_joining = false
-	if error == ErrorCodes.SUCCESS: joined_lobby.emit()
-	_is_busy = false
-	return error
-
-func _on_steam_lobby_creation_response(connection_response: int, lobby_id: int) -> void:
-	match connection_response:
-		Steam.RESULT_OK: setup_steam_lobby(lobby_id)
-		_: lobby_hosting_response.emit(ErrorCodes.FAILED)
-
-func setup_steam_lobby(lobby_id: int) -> void:
-	var my_steam_name: String = Steam.getPersonaName()
-	if len(my_steam_name) > 17: my_steam_name = my_steam_name.substr(0,17) + '...'
-	Steam.setLobbyData(lobby_id, "name", "%s's Lobby" % my_steam_name)
-	Steam.setLobbyJoinable(lobby_id, true)
-	var new_steam_multiplayer_peer := SteamMultiplayerPeer.new()
-	var error := new_steam_multiplayer_peer.create_host(0)
-	match error:
-		OK:
-			steam_multiplayer_peer = new_steam_multiplayer_peer
-			steam_lobby_id = lobby_id
-			multiplayer.set_multiplayer_peer(steam_multiplayer_peer)
-			Steam.allowP2PPacketRelay(true)
-			lobby_hosting_response.emit(ErrorCodes.SUCCESS)
-			_register_player_data(personal_player_data.to_dict())
-		_:
-			steam_multiplayer_peer.close()
-			Steam.leaveLobby(lobby_id)
-			lobby_hosting_response.emit(ErrorCodes.FAILED)
-
-func _on_steam_lobby_join_response(lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
-	var lobby_owner_id: int = Steam.getLobbyOwner(lobby_id)
-	if lobby_owner_id == Steam.getSteamID(): lobby_join_response.emit(ErrorCodes.JOIN_FAILED_SAME_OWNER_ID); return
-	if response != Steam.RESULT_OK: lobby_join_response.emit(ErrorCodes.STEAM_CONNECTION_ERROR); return
-	var new_steam_peer: SteamMultiplayerPeer = SteamMultiplayerPeer.new()
-	var error := new_steam_peer.create_client(lobby_owner_id, 0)
-	match error:
-		OK:
-			steam_lobby_id = lobby_id
-			steam_multiplayer_peer = new_steam_peer
-			multiplayer.set_multiplayer_peer(steam_multiplayer_peer)
-			_register_player_data.call_deferred(personal_player_data.to_dict())
-			lobby_join_response.emit(ErrorCodes.SUCCESS)
-		_:
-			new_steam_peer.close()
-			Steam.leaveLobby(steam_lobby_id)
-			lobby_join_response.emit(ErrorCodes.FAILED)
-
-func create_steam_player(multiplayer_connection_id: int) -> PlayerData:
-	var player_data := PlayerData.new()
-	player_data.display_name = Steam.getPersonaName()
-	player_data.multiplayer_id = multiplayer_connection_id
-	player_data.steam_id = Steam.getSteamID()
-	return player_data
-
-#region LOCAL HOSTING
-var local_peer := ENetMultiplayerPeer.new()
-
-const LOCAL_SERVER_ADDRESS: String = "127.0.0.1"
-const LOCAL_SERVER_PORT: int = 8080
-
-func _setup_local_hosting_signals() -> void:
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server) # Only emitted on clients
-
-func host_local_lobby() -> ErrorCodes:
-	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
-	_is_busy = true
-	is_host = true
-	var peer := ENetMultiplayerPeer.new()
-	local_peer = peer
-	
-	var error := peer.create_server(LOCAL_SERVER_PORT, MAX_PLAYERS)
-	match error:
-		OK:
-			multiplayer.multiplayer_peer = local_peer
-			_register_player_data(personal_player_data.to_dict())
-			_is_busy = false
-			return ErrorCodes.SUCCESS
-		_:
-			is_host = false
-			return ErrorCodes.FAILED
-
-func join_local_lobby() -> ErrorCodes:
-	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
-	_is_busy = true
-	var has_local_host := await check_if_host_exists(LOCAL_SERVER_ADDRESS,LOCAL_SERVER_PORT)
-	_is_busy = false
-	if not has_local_host: return ErrorCodes.FAILED
-	else: return join_address(LOCAL_SERVER_ADDRESS, LOCAL_SERVER_PORT)
 
 func join_address(address: String, port: int = LOCAL_SERVER_PORT) -> ErrorCodes:
-	if _is_busy: return ErrorCodes.CURRENTLY_BUSY
+	if is_busy: return ErrorCodes.CURRENTLY_BUSY
 	is_host = false
 	var response: ErrorCodes = ErrorCodes.FAILED
 	if is_host or steam_lobby_id != 0: leave_lobby()
 	var new_multiplayer_peer := ENetMultiplayerPeer.new()
 	var error := new_multiplayer_peer.create_client(address, port)
-	_is_busy = false
+	is_busy = false
 	if error != OK:
 		printerr("Failed to join port %s with address: %s" % [port, address])
 		return response
@@ -184,11 +60,7 @@ func join_address(address: String, port: int = LOCAL_SERVER_PORT) -> ErrorCodes:
 	joined_lobby.emit()
 	return response
 
-func _on_connected_to_server() -> void:
-	_register_player_data(personal_player_data.to_dict())
-	_register_player_data.rpc_id(1,personal_player_data.to_dict()) ## Requests the Host to register your personal player data
-	personal_player_data.multiplayer_id = multiplayer.get_unique_id()
-	player_connected.emit(personal_player_data)
+func _on_connected_to_server() -> void: _register_player_data.rpc_id(1,personal_player_data.to_dict()) # Sends a request to the server host to register and sync your PlayerData resource
 
 func _on_connection_failed() -> void:
 	is_host = false
@@ -220,12 +92,109 @@ func _handle_peer_disconnection(peer_id: int) -> void:
 func _register_player_data(player_data_dict: Dictionary):
 	var player_data := PlayerData.from_dict(player_data_dict)
 	var mult_id := player_data.multiplayer_id
-	if not players.has(mult_id) or is_host:
+	if not players.has(mult_id):
 		players[player_data.multiplayer_id] = player_data
-		player_connected.emit(player_data)
+		player_connected.emit.call_deferred(player_data)
+		if is_host:
+			# Registers the new player data to the other active players in the lobby
+			for peer in multiplayer.get_peers():
+				_register_player_data.rpc_id(peer,player_data_dict)
+		
+			# Syncs the current players data to the player that was just registred
+			var sender_id := multiplayer.get_remote_sender_id()
+			if sender_id != 0 and sender_id != multiplayer.get_unique_id():
+				for data: PlayerData in players.values():
+					_register_player_data.rpc_id(sender_id,data.to_dict())
 
-func _process(_delta: float) -> void:
-	_process_steam_p2p_packets()
+func _get_personal_player_data() -> PlayerData:
+	if not personal_player_data:
+		personal_player_data = PlayerData.new()
+		personal_player_data.steam_id = Steam.getSteamID()
+		personal_player_data.display_name = Steam.getPersonaName()
+	personal_player_data.multiplayer_id = 0 if not multiplayer.has_multiplayer_peer() else multiplayer.get_unique_id()
+	return personal_player_data
+
+#region STEAM P2P MULTIPLAYER
+const STEAM_APP_ID: int = 480 # Default for the "Spacewar" game
+
+func _setup_steam_multiplayer() -> void:
+	multiplayer.server_relay = true
+	OS.set_environment("SteamAppID", str(STEAM_APP_ID))
+	OS.set_environment("SteamGameID", str(STEAM_APP_ID))
+	Steam.steamInit(false, STEAM_APP_ID) # For some reason the autocomplete for the values are inverted but this is the correct way for now.
+	Steam.allowP2PPacketRelay(true)
+	Steam.lobby_created.connect(_on_steam_lobby_created)
+	Steam.lobby_joined.connect(_on_steam_lobby_join_response)
+	Steam.join_requested.connect(_on_steam_join_requested)
+
+func _on_steam_lobby_created(connection_response: int, lobby_id: int) -> void:
+	match connection_response:
+		Steam.RESULT_OK: 
+			steam_lobby_id = lobby_id
+			Steam.setLobbyJoinable(lobby_id, true)
+			_register_player_data(personal_player_data.to_dict())
+			_register_player_data(personal_player_data.to_dict())
+			lobby_hosting_response.emit.call_deferred(ErrorCodes.SUCCESS)
+		_: lobby_hosting_response.emit(ErrorCodes.FAILED)
+
+func host_steam_lobby() -> ErrorCodes:
+	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	is_host = false
+	is_busy = true
+	var new_steam_peer := _create_steam_peer()
+	var host_error := new_steam_peer.create_host(0)
+	var error_response := ErrorCodes.NO_RESPONSE
+	match host_error:
+		Error.OK:
+			Steam.createLobby(Steam.LOBBY_TYPE_FRIENDS_ONLY, MAX_PLAYERS)
+			var hosting_response: ErrorCodes = await lobby_hosting_response
+			error_response = hosting_response
+			match hosting_response:
+				ErrorCodes.SUCCESS:
+					is_host = true
+					multiplayer.multiplayer_peer = new_steam_peer
+					joined_lobby.emit()
+		_: error_response = ErrorCodes.FAILED
+	is_busy = false
+	return error_response
+
+func _on_steam_join_requested(lobby_id: int, _steam_id: int) -> void: join_steam_lobby(lobby_id)
+
+func join_steam_lobby(lobby_id: int = 0) -> ErrorCodes:
+	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	is_joining = true
+	if lobby_id != steam_lobby_id and steam_lobby_id != 0: leave_lobby()
+	is_host = false
+	steam_lobby_id = lobby_id
+	is_busy = true
+	Steam.joinLobby(lobby_id)
+	var error: ErrorCodes = await lobby_join_response
+	is_joining = false
+	if error == ErrorCodes.SUCCESS: joined_lobby.emit()
+	is_busy = false
+	return error
+
+func _on_steam_lobby_join_response(lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
+	var lobby_owner_id: int = Steam.getLobbyOwner(lobby_id)
+	if lobby_owner_id == Steam.getSteamID(): lobby_join_response.emit(ErrorCodes.JOIN_FAILED_SAME_OWNER_ID); return
+	if response != Steam.RESULT_OK: lobby_join_response.emit(ErrorCodes.STEAM_CONNECTION_ERROR); return
+	var new_steam_peer := _create_steam_peer()
+	var error := new_steam_peer.create_client(lobby_owner_id, 0)
+	match error:
+		OK:
+			steam_lobby_id = lobby_id
+			multiplayer.multiplayer_peer = new_steam_peer
+			_register_player_data.call_deferred(personal_player_data.to_dict())
+			lobby_join_response.emit(ErrorCodes.SUCCESS)
+		_:
+			new_steam_peer.close()
+			Steam.leaveLobby(steam_lobby_id)
+			lobby_join_response.emit(ErrorCodes.FAILED)
+
+func _create_steam_peer() -> SteamMultiplayerPeer:
+	var new_peer: SteamMultiplayerPeer = SteamMultiplayerPeer.new()
+	new_peer.server_relay = true
+	return new_peer
 
 func _process_steam_p2p_packets() -> void:
 	var packet_size: int = Steam.getAvailableP2PPacketSize(0)
@@ -234,30 +203,82 @@ func _process_steam_p2p_packets() -> void:
 	var packet_data: Variant = bytes_to_var(packet["data"])
 	_handle_incoming_packet(packet_data)
 
-func _handle_incoming_packet(data: Dictionary) -> void:
-	match data.get("header"):
-		"DATA_PAYLOAD": _handle_payload_received(DataPayload.from_dict(data))
+#endregion
 
-func _handle_payload_received(payload: DataPayload) -> void:
-	match payload.type:
-		payload.Types.STEAM_LOBBY_INVITE:
-			var invite_steam_lobby_id: int = int(payload.lobby_invite_address)
-			var sender_id: int = payload.steam_sender_id
-			steam_lobby_invite_received.emit(invite_steam_lobby_id, sender_id)
+#region LOCAL MULTIPLAYER
 
-func _send_steam_data_payload(payload: DataPayload) -> bool:
-	var target_steam_id: int = payload.steam_target_id
-	for player: PlayerData in players.values():
-		if player.steam_id == target_steam_id:
-			var target_persona_name := Steam.getFriendPersonaName(player.steam_id)
-			print_rich("[color=red][b]Lobby Error:[/b][/color] Failed to invite '%s' (Already in lobby)." % target_persona_name)
-			return false
-	var success: bool = Steam.sendP2PPacket(target_steam_id, payload.packet_data, payload.steam_send_type, payload.steam_packet_channel)
-	if payload.type == payload.Types.STEAM_LOBBY_INVITE: ## Also invites using Steam direct messages
-		Steam.inviteUserToLobby(int(payload.lobby_invite_address), payload.steam_target_id)
-	return success
+const LOCAL_SERVER_ADDRESS: String = "127.0.0.1"
+const LOCAL_SERVER_PORT: int = 8080
 
-class DataPayload extends Resource: ## Custom information payload to handle requests
+signal _local_host_check_response(has_host: bool)
+
+var _check_timer: Timer
+
+func _setup_local_multiplayer() -> void:
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
+	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	multiplayer.connected_to_server.connect(_on_connected_to_server) # Only emitted on clients
+
+func host_local_lobby() -> ErrorCodes:
+	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	is_busy = true
+	is_host = true
+	
+	var new_peer := ENetMultiplayerPeer.new()
+	var error := new_peer.create_server(LOCAL_SERVER_PORT, MAX_PLAYERS)
+	match error:
+		OK:
+			multiplayer.multiplayer_peer = new_peer
+			_register_player_data(personal_player_data.to_dict())
+			is_busy = false
+			return ErrorCodes.SUCCESS
+		_:
+			is_host = false
+			return ErrorCodes.FAILED
+
+func join_local_lobby() -> ErrorCodes:
+	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	is_busy = true
+	var has_local_host := await check_if_host_exists(LOCAL_SERVER_ADDRESS,LOCAL_SERVER_PORT)
+	is_busy = false
+	if not has_local_host: return ErrorCodes.FAILED
+	else: return join_address(LOCAL_SERVER_ADDRESS, LOCAL_SERVER_PORT)
+
+func check_if_host_exists(ip_address: String, port: int) -> bool:
+	var peer = ENetMultiplayerPeer.new()
+	var error := peer.create_client(ip_address, port)
+	if error != OK: return false
+	multiplayer.multiplayer_peer = peer
+	multiplayer.connected_to_server.connect(_on_host_found)
+	multiplayer.connection_failed.connect(_on_host_missing)
+	_check_timer = Timer.new()
+	add_child(_check_timer)
+	_check_timer.wait_time = 2.0
+	_check_timer.one_shot = true
+	_check_timer.timeout.connect(_on_host_missing)
+	_check_timer.start()
+	var has_host: bool = await _local_host_check_response
+	peer.close()
+	_local_cleanup()
+	return has_host
+
+func _on_host_found(): _local_host_check_response.emit(true)
+
+func _on_host_missing(): _local_host_check_response.emit(false)
+
+func _local_cleanup():
+	if is_instance_valid(_check_timer): _check_timer.queue_free()
+	if multiplayer.connected_to_server.is_connected(_on_host_found):
+		multiplayer.connected_to_server.disconnect(_on_host_found)
+	if multiplayer.connection_failed.is_connected(_on_host_missing):
+		multiplayer.connection_failed.disconnect(_on_host_missing)
+	multiplayer.multiplayer_peer = null
+#endregion
+
+
+#region DATA PAYLOAD LOGIC
+class DataPayload extends Resource:
 	enum Types { UNDEFINED, STEAM_LOBBY_INVITE }
 	
 	func _init() -> void: header = "DATA_PAYLOAD"
@@ -314,40 +335,26 @@ class DataPayload extends Resource: ## Custom information payload to handle requ
 
 	func send() -> bool: return Online._send_steam_data_payload(self)
 
+func _handle_incoming_packet(data: Dictionary) -> void:
+	match data.get("header"):
+		"DATA_PAYLOAD": _handle_payload_received(DataPayload.from_dict(data))
 
+func _handle_payload_received(payload: DataPayload) -> void:
+	match payload.type:
+		payload.Types.STEAM_LOBBY_INVITE:
+			var invite_steam_lobby_id: int = int(payload.lobby_invite_address)
+			var sender_id: int = payload.steam_sender_id
+			steam_lobby_invite_received.emit(invite_steam_lobby_id, sender_id)
 
-#region LOCAL HOST VALIDATION
-signal _local_host_check_response(has_host: bool)
-
-var _check_timer: Timer
-
-func check_if_host_exists(ip_address: String, port: int) -> bool:
-	var peer = ENetMultiplayerPeer.new()
-	var error := peer.create_client(ip_address, port)
-	if error != OK: return false
-	multiplayer.multiplayer_peer = peer
-	multiplayer.connected_to_server.connect(_on_host_found)
-	multiplayer.connection_failed.connect(_on_host_missing)
-	_check_timer = Timer.new()
-	add_child(_check_timer)
-	_check_timer.wait_time = 2.0
-	_check_timer.one_shot = true
-	_check_timer.timeout.connect(_on_host_missing)
-	_check_timer.start()
-	var has_host: bool = await _local_host_check_response
-	peer.close()
-	_local_cleanup()
-	return has_host
-
-func _on_host_found(): _local_host_check_response.emit(true)
-
-func _on_host_missing(): _local_host_check_response.emit(false)
-
-func _local_cleanup():
-	if is_instance_valid(_check_timer): _check_timer.queue_free()
-	if multiplayer.connected_to_server.is_connected(_on_host_found):
-		multiplayer.connected_to_server.disconnect(_on_host_found)
-	if multiplayer.connection_failed.is_connected(_on_host_missing):
-		multiplayer.connection_failed.disconnect(_on_host_missing)
-	multiplayer.multiplayer_peer = null
+func _send_steam_data_payload(payload: DataPayload) -> bool:
+	var target_steam_id: int = payload.steam_target_id
+	for player: PlayerData in players.values():
+		if player.steam_id == target_steam_id:
+			var target_persona_name := Steam.getFriendPersonaName(player.steam_id)
+			print_rich("[color=red][b]Lobby Error:[/b][/color] Failed to invite '%s' (Already in lobby)." % target_persona_name)
+			return false
+	var success: bool = Steam.sendP2PPacket(target_steam_id, payload.packet_data, payload.steam_send_type, payload.steam_packet_channel)
+	if payload.type == payload.Types.STEAM_LOBBY_INVITE:
+		Steam.inviteUserToLobby(int(payload.lobby_invite_address), payload.steam_target_id) # This triggers the direct message invite in the Steam App
+	return success
 #endregion

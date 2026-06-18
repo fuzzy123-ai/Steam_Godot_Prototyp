@@ -57,7 +57,7 @@ func _on_disconnected() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	toggle_ui(true)
 
-func _on_player_connected(player_data: PlayerData) -> void: 
+func _on_player_connected(player_data: PlayerData) -> void:
 	_update_lobby_info_button()
 	if not multiplayer.is_server(): return
 	multiplayer_spawner.spawn(player_data.to_dict())
@@ -110,8 +110,8 @@ func _add_player(player_data_dict: Dictionary) -> Node:
 	var player: PlayerCharacter = player_scene.instantiate()
 	player.name = str(id)
 	player.position = get_spawn_point()
+	player.reset_physics_interpolation()
 	PlayerData.apply_data_to_node(player_data,player)
-
 	return player
 
 func get_spawn_point() -> Vector3:

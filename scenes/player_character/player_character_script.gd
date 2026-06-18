@@ -186,10 +186,11 @@ var default_input_actions : Dictionary
 @onready var slide_floor_check: RayCast3D = %SlideFloorCheck
 @onready var left_wall_check : RayCast3D = %LeftWallCheck
 @onready var right_wall_check : RayCast3D = %RightWallCheck
+@onready var character_model: Node3D = %CharacterModel
 
 func _ready() -> void:
 	if not is_multiplayer_authority(): cam_holder.camera.clear_current(); return
-		
+	
 	#set and value references
 	hit_ground_cooldown_ref = hit_ground_cooldown
 	jump_cooldown_ref = jump_cooldown
@@ -248,18 +249,29 @@ func input_actions_check() -> void:
 					input_event_key.physical_keycode = keycode
 					InputMap.action_add_event(input_action, input_event_key)
 	
-@onready var character_model: Node3D = %CharacterModel
-func _update_model_visuals() -> void:
-	character_model.rotation_degrees.y = cam_holder.rotation_degrees.y
+func _update_model_visuals() -> void: character_model.rotation_degrees.y = cam_holder.rotation_degrees.y
 
+func _update_nick_label() -> void:
 	nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
 	if not multiplayer.has_multiplayer_peer() or is_multiplayer_authority():
 		nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
-		nick_label.text = Online.personal_player_data.display_name
-	
+		var nickname := Online.personal_player_data.display_name
+		if not Online.steam_lobby_id and multiplayer.has_multiplayer_peer():
+			var player_number := 0
+			for mult_id: int in Online.players:
+				player_number += 1
+				var player_data: PlayerData = Online.players.get(mult_id)
+				if not player_data: continue
+				nickname = "(%s) %s" % [player_number,nickname]
+				break
+		nick_label.text = nickname
+
 func _process(delta: float) -> void:
 	
 	_update_model_visuals()
+	
+	_update_nick_label()
+
 	
 	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority(): return
 
