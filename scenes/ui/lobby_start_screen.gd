@@ -14,6 +14,7 @@ const ERROR_CURRENTLY_BUSY := 3
 const ERROR_JOIN_FAILED_SAME_OWNER_ID := 4
 const ERROR_STEAM_CONNECTION_ERROR := 5
 const PING_INTERVAL_SECONDS := 1.5
+const DEFAULT_MAP_PREVIEW_SEED := 1001
 
 @onready var host_button: Button = %HostButton
 @onready var lobby_id_input: LineEdit = %LobbyIdInput
@@ -31,6 +32,7 @@ const PING_INTERVAL_SECONDS := 1.5
 @onready var seed_input: LineEdit = %SeedInput
 @onready var randomize_seed_button: Button = %RandomizeSeedButton
 @onready var match_setup_label: Label = %MatchSetupLabel
+@onready var map_preview_renderer: Control = %MapPreviewRenderer
 @onready var loading_overlay: PanelContainer = %LoadingOverlay
 @onready var loading_step_label: Label = %LoadingStepLabel
 @onready var loading_bar: ProgressBar = %LoadingBar
@@ -41,6 +43,7 @@ var _ping_nonce := 1
 var _pending_pings: Dictionary[int, int] = {}
 var _peer_pings: Dictionary[int, int] = {}
 var _rng := RandomNumberGenerator.new()
+var _last_preview_seed: int = -1
 
 
 func _ready() -> void:
@@ -67,6 +70,7 @@ func _ready() -> void:
 	_set_status("Ready. Start Steam, host a lobby, or paste a lobby ID.")
 	_set_loading(false)
 	_refresh_match_setup_label()
+	_refresh_map_preview()
 	_refresh_controls()
 
 
@@ -156,6 +160,7 @@ func _on_randomize_seed_pressed() -> void:
 
 func _on_match_setup_changed(_index: int = -1) -> void:
 	_refresh_match_setup_label()
+	_refresh_map_preview()
 
 
 func _on_joined_lobby() -> void:
@@ -234,7 +239,7 @@ func get_match_setup() -> Dictionary:
 	return {
 		"tank_id": selected_tank.get("id", "basic"),
 		"tank_label": selected_tank.get("label", "Basic"),
-		"seed": _get_seed_value(),
+		"seed": _get_preview_seed_value(),
 		"map_id": "proving_grounds",
 	}
 
@@ -268,13 +273,32 @@ func _get_seed_value() -> int:
 
 func _refresh_match_setup_label() -> void:
 	var setup := get_match_setup()
-	var seed_text := "random on match start" if int(setup["seed"]) == 0 else str(setup["seed"])
+	var seed_text := "default" if seed_input.text.strip_edges().is_empty() else str(setup["seed"])
+	var preview_seed_text := str(_get_preview_seed_value())
 	var validity := "" if _seed_is_valid() else " | seed must be numeric"
-	match_setup_label.text = "Tank: %s | Seed: %s%s" % [
+	match_setup_label.text = "Tank: %s | Seed: %s | Preview: %s%s" % [
 		str(setup["tank_label"]),
 		seed_text,
+		preview_seed_text,
 		validity,
 	]
+
+
+func _refresh_map_preview() -> void:
+	if map_preview_renderer == null or not map_preview_renderer.has_method("apply_seed"):
+		return
+	var preview_seed := _get_preview_seed_value()
+	if _last_preview_seed == preview_seed:
+		return
+	_last_preview_seed = preview_seed
+	map_preview_renderer.call("apply_seed", preview_seed)
+
+
+func _get_preview_seed_value() -> int:
+	var seed_value := _get_seed_value()
+	if seed_value == 0:
+		return DEFAULT_MAP_PREVIEW_SEED
+	return seed_value
 
 
 func _update_connection_summary(online: Node, connected: bool) -> void:

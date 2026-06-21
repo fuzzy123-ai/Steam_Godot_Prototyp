@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/lobby_start_screen.gd" id="1_lobby"]
+[ext_resource type="PackedScene" path="res://scenes/map_preview/map_preview_renderer.tscn" id="2_map_preview"]
 
 [node name="LobbyStartScreen" type="Control"]
 layout_mode = 3
@@ -234,61 +235,16 @@ custom_minimum_size = Vector2(420, 360)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="MapPreview" type="Control" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel"]
+[node name="MapPreviewRenderer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel" instance=ExtResource("2_map_preview")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 300)
 layout_mode = 2
-
-[node name="Ground" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.18, 0.29, 0.2, 1)
-
-[node name="RidgeA" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 0
-offset_left = 42.0
-offset_top = 54.0
-offset_right = 236.0
-offset_bottom = 92.0
-color = Color(0.33, 0.42, 0.23, 1)
-
-[node name="RidgeB" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 0
-offset_left = 230.0
-offset_top = 236.0
-offset_right = 392.0
-offset_bottom = 284.0
-color = Color(0.3, 0.38, 0.22, 1)
-
-[node name="CraterHint" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 0
-offset_left = 172.0
-offset_top = 138.0
-offset_right = 252.0
-offset_bottom = 218.0
-color = Color(0.11, 0.12, 0.1, 1)
-
-[node name="SpawnA" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 0
-offset_left = 44.0
-offset_top = 284.0
-offset_right = 86.0
-offset_bottom = 326.0
-color = Color(0.22, 0.48, 0.9, 1)
-
-[node name="SpawnB" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
-layout_mode = 0
-offset_left = 336.0
-offset_top = 34.0
-offset_right = 378.0
-offset_bottom = 76.0
-color = Color(0.9, 0.28, 0.2, 1)
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="MapNoteLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
 layout_mode = 2
-text = "Level selection will plug into this preview later. Current map is a fixed sandbox for lobby and terrain tests."
+text = "Proving Grounds"
 autowrap_mode = 3
 
 [node name="LoadingOverlay" type="PanelContainer" parent="."]

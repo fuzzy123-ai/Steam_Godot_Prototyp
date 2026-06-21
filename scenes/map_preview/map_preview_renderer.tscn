@@ -1,0 +1,47 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/map_preview/map_preview_renderer.gd" id="1_preview_script"]
+[ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="2_terrain_world"]
+
+[node name="MapPreviewRenderer" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_preview_script")
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="ViewportContainer"]
+unique_name_in_owner = true
+handle_input_locally = false
+size = Vector2i(512, 512)
+transparent_bg = true
+render_target_update_mode = 4
+
+[node name="PreviewWorld" type="Node3D" parent="ViewportContainer/PreviewViewport"]
+
+[node name="PreviewTerrain" parent="ViewportContainer/PreviewViewport/PreviewWorld" instance=ExtResource("2_terrain_world")]
+unique_name_in_owner = true
+
+[node name="PreviewLight" type="DirectionalLight3D" parent="ViewportContainer/PreviewViewport/PreviewWorld"]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 0, 0)
+light_energy = 1.6
+
+[node name="PreviewCamera" type="Camera3D" parent="ViewportContainer/PreviewViewport/PreviewWorld"]
+unique_name_in_owner = true
+position = Vector3(0, 90, 0)
+rotation = Vector3(-1.5707964, 0, 0)
+current = true
+projection = 1
+size = 68.0
