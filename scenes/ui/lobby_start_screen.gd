@@ -2,6 +2,11 @@ extends Control
 
 signal start_match_requested
 
+const TANK_OPTIONS: Array[Dictionary] = [
+	{"id": "basic_tank", "label": "Basic"},
+	{"id": "light_tank", "label": "Light"},
+	{"id": "heavy_tank", "label": "Heavy"},
+]
 const ERROR_NO_RESPONSE := 0
 const ERROR_SUCCESS := 1
 const ERROR_FAILED := 2
@@ -22,6 +27,10 @@ const PING_INTERVAL_SECONDS := 1.5
 @onready var ping_status_label: Label = %PingStatusLabel
 @onready var peer_list_label: Label = %PeerListLabel
 @onready var selected_map_label: Label = %SelectedMapLabel
+@onready var tank_option_button: OptionButton = %TankOptionButton
+@onready var seed_input: LineEdit = %SeedInput
+@onready var randomize_seed_button: Button = %RandomizeSeedButton
+@onready var match_setup_label: Label = %MatchSetupLabel
 @onready var loading_overlay: PanelContainer = %LoadingOverlay
 @onready var loading_step_label: Label = %LoadingStepLabel
 @onready var loading_bar: ProgressBar = %LoadingBar
@@ -31,14 +40,20 @@ var _ping_timer := 0.0
 var _ping_nonce := 1
 var _pending_pings: Dictionary[int, int] = {}
 var _peer_pings: Dictionary[int, int] = {}
+var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	_rng.randomize()
+	_populate_tank_options()
 	host_button.pressed.connect(_on_host_pressed)
 	copy_button.pressed.connect(_on_copy_pressed)
 	paste_button.pressed.connect(_on_paste_pressed)
 	join_button.pressed.connect(_on_join_pressed)
 	start_match_button.pressed.connect(_on_start_match_pressed)
+	tank_option_button.item_selected.connect(_on_match_setup_changed)
+	seed_input.text_changed.connect(func(_text: String) -> void: _on_match_setup_changed())
+	randomize_seed_button.pressed.connect(_on_randomize_seed_pressed)
 	lobby_id_input.text_submitted.connect(func(_text: String) -> void: _on_join_pressed())
 
 	var online := _online()
@@ -51,6 +66,7 @@ func _ready() -> void:
 
 	_set_status("Ready. Start Steam, host a lobby, or paste a lobby ID.")
 	_set_loading(false)
+	_refresh_match_setup_label()
 	_refresh_controls()
 
 
@@ -126,8 +142,20 @@ func _on_start_match_pressed() -> void:
 	if not _can_start_match():
 		_set_status("Only the host can start the match.")
 		return
+	if not _seed_is_valid():
+		_set_status("Enter a numeric seed or click Randomize Seed.")
+		return
 	show_loading("Sending start signal", 15.0)
 	start_match_requested.emit()
+
+
+func _on_randomize_seed_pressed() -> void:
+	seed_input.text = str(_rng.randi_range(1, 2147483647))
+	_on_match_setup_changed()
+
+
+func _on_match_setup_changed(_index: int = -1) -> void:
+	_refresh_match_setup_label()
 
 
 func _on_joined_lobby() -> void:
@@ -154,6 +182,9 @@ func _set_busy(is_busy: bool, message: String = "") -> void:
 	join_button.disabled = is_busy
 	paste_button.disabled = is_busy
 	lobby_id_input.editable = not is_busy
+	tank_option_button.disabled = is_busy
+	seed_input.editable = not is_busy
+	randomize_seed_button.disabled = is_busy
 	if not message.is_empty():
 		_set_status(message)
 	_refresh_controls()
@@ -169,7 +200,11 @@ func _refresh_controls() -> void:
 	join_button.disabled = _busy or connected
 	paste_button.disabled = _busy or connected
 	lobby_id_input.editable = not _busy and not connected
+	tank_option_button.disabled = _busy
+	seed_input.editable = not _busy
+	randomize_seed_button.disabled = _busy
 	_update_connection_summary(online, connected)
+	_refresh_match_setup_label()
 
 
 func _can_start_match() -> bool:
@@ -192,6 +227,54 @@ func hide_loading() -> void:
 
 func _set_loading(visible: bool) -> void:
 	loading_overlay.visible = visible
+
+
+func get_match_setup() -> Dictionary:
+	var selected_tank := _get_selected_tank()
+	return {
+		"tank_id": selected_tank.get("id", "basic"),
+		"tank_label": selected_tank.get("label", "Basic"),
+		"seed": _get_seed_value(),
+		"map_id": "proving_grounds",
+	}
+
+
+func _populate_tank_options() -> void:
+	tank_option_button.clear()
+	for tank_data: Dictionary in TANK_OPTIONS:
+		tank_option_button.add_item(str(tank_data.get("label", "Tank")))
+	if tank_option_button.get_item_count() > 0:
+		tank_option_button.select(0)
+
+
+func _get_selected_tank() -> Dictionary:
+	var index := tank_option_button.selected
+	if index < 0 or index >= TANK_OPTIONS.size():
+		return TANK_OPTIONS[0]
+	return TANK_OPTIONS[index]
+
+
+func _seed_is_valid() -> bool:
+	var seed_text := seed_input.text.strip_edges()
+	return seed_text.is_empty() or seed_text.is_valid_int()
+
+
+func _get_seed_value() -> int:
+	var seed_text := seed_input.text.strip_edges()
+	if seed_text.is_empty() or not seed_text.is_valid_int():
+		return 0
+	return int(seed_text)
+
+
+func _refresh_match_setup_label() -> void:
+	var setup := get_match_setup()
+	var seed_text := "random on match start" if int(setup["seed"]) == 0 else str(setup["seed"])
+	var validity := "" if _seed_is_valid() else " | seed must be numeric"
+	match_setup_label.text = "Tank: %s | Seed: %s%s" % [
+		str(setup["tank_label"]),
+		seed_text,
+		validity,
+	]
 
 
 func _update_connection_summary(online: Node, connected: bool) -> void:

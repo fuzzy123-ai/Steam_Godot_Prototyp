@@ -1,27 +1,47 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank_game/tank_game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="2_terrain"]
 [ext_resource type="PackedScene" path="res://scenes/ui/lobby_start_screen.tscn" id="3_lobby"]
 [ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="4_tank"]
 [ext_resource type="Script" path="res://scenes/camera/tank_camera_controller.gd" id="5_camera_controller"]
+[ext_resource type="PackedScene" path="res://scenes/capture_point/capture_point.tscn" id="6_capture_point"]
+[ext_resource type="PackedScene" path="res://scenes/ui/match_hud/match_hud.tscn" id="7_match_hud"]
+[ext_resource type="Resource" path="res://scenes/tank/basic_tank_definition.tres" id="8_basic_definition"]
+[ext_resource type="Resource" path="res://scenes/tank/light_tank_definition.tres" id="9_light_definition"]
+[ext_resource type="Resource" path="res://scenes/tank/heavy_tank_definition.tres" id="10_heavy_definition"]
 
 [node name="TankGame" type="Node"]
 script = ExtResource("1_game")
+default_vehicle_definition = ExtResource("8_basic_definition")
+vehicle_definitions = Array[Resource]([ExtResource("8_basic_definition"), ExtResource("9_light_definition"), ExtResource("10_heavy_definition")])
 
 [node name="World" type="Node3D" parent="."]
 unique_name_in_owner = true
 visible = false
 
 [node name="Terrain" parent="World" instance=ExtResource("2_terrain")]
+unique_name_in_owner = true
 
 [node name="Tanks" type="Node3D" parent="World"]
 
-[node name="PreviewTank" parent="World/Tanks" instance=ExtResource("4_tank")]
+[node name="PreviewTank" parent="World/Tanks" groups=["capture_unit"] instance=ExtResource("4_tank")]
+unique_name_in_owner = true
 
 [node name="Projectiles" type="Node3D" parent="World"]
 
 [node name="Props" type="Node3D" parent="World"]
+
+[node name="CapturePoints" type="Node3D" parent="World"]
+unique_name_in_owner = true
+
+[node name="Alpha" parent="World/CapturePoints" instance=ExtResource("6_capture_point")]
+position = Vector3(-8, 0, -4)
+point_id = &"alpha"
+
+[node name="Bravo" parent="World/CapturePoints" instance=ExtResource("6_capture_point")]
+position = Vector3(9, 0, 7)
+point_id = &"bravo"
 
 [node name="Sun" type="DirectionalLight3D" parent="World"]
 transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 0, 0)
@@ -43,6 +63,9 @@ size = 20.0
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="LobbyStartScreen" parent="UI" instance=ExtResource("3_lobby")]
+unique_name_in_owner = true
+
+[node name="MatchHud" parent="UI" instance=ExtResource("7_match_hud")]
 unique_name_in_owner = true
 
 [node name="MatchStatusLabel" type="Label" parent="UI"]

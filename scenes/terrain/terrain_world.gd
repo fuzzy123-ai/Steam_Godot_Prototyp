@@ -3,6 +3,7 @@ extends Node3D
 
 @export var terrain_path: NodePath = NodePath("Terrain3D")
 @export var preview_mesh_path: NodePath = NodePath("PreviewMesh")
+@export var generation_settings: Resource
 @export var region_centers: Array[Vector3] = [
 	Vector3(-32.0, 0.0, -32.0),
 	Vector3(-32.0, 0.0, 32.0),
@@ -12,6 +13,11 @@ extends Node3D
 @export_range(16, 64, 1) var generation_radius: int = 30
 @export_range(8, 96, 1) var preview_subdivisions: int = 56
 @export_range(0.2, 8.0, 0.1) var height_scale: float = 1.8
+@export var seed: int = 1001
+@export_range(0, 12, 1) var ridge_count: int = 5
+@export_range(0.0, 8.0, 0.1) var ridge_strength: float = 2.4
+@export_range(0.01, 1.0, 0.01) var noise_frequency: float = 0.18
+@export_range(0.0, 4.0, 0.1) var noise_strength: float = 0.35
 @export_range(0.25, 4.0, 0.05) var sample_step: float = 1.0
 @export var low_color: Color = Color(0.16, 0.19, 0.22, 1.0)
 @export var mid_color: Color = Color(0.36, 0.39, 0.25, 1.0)
@@ -26,12 +32,39 @@ extends Node3D
 
 var _terrain: Terrain3D
 var _preview_mesh: MeshInstance3D
+var _features: Array[Dictionary] = []
 
 
 func _ready() -> void:
 	_terrain = get_node_or_null(terrain_path) as Terrain3D
 	_preview_mesh = get_node_or_null(preview_mesh_path) as MeshInstance3D
+	_apply_exported_settings()
 	_rebuild_terrain()
+
+
+func apply_generation_settings(settings: Resource) -> void:
+	generation_settings = settings
+	_apply_exported_settings()
+	_rebuild_terrain()
+
+
+func apply_seed(new_seed: int) -> void:
+	seed = new_seed
+	if generation_settings != null:
+		generation_settings.seed = new_seed
+	_rebuild_terrain()
+
+
+func get_generation_fingerprint() -> String:
+	return "%s:%s:%s:%s:%s:%s:%s" % [
+		seed,
+		generation_radius,
+		preview_subdivisions,
+		height_scale,
+		ridge_count,
+		ridge_strength,
+		noise_frequency
+	]
 
 
 func get_height_at(world_position: Vector3) -> float:
@@ -60,6 +93,7 @@ func _rebuild_terrain() -> void:
 	if _terrain == null:
 		return
 
+	_build_features()
 	_terrain.region_size = Terrain3D.SIZE_64
 	if _terrain.material != null:
 		_terrain.material.show_checkered = false
@@ -76,6 +110,36 @@ func _rebuild_terrain() -> void:
 		_terrain.collision.mode = Terrain3DCollision.DYNAMIC_GAME
 		_terrain.collision.build()
 	_rebuild_preview_mesh()
+
+
+func _apply_exported_settings() -> void:
+	if generation_settings == null:
+		return
+	seed = generation_settings.seed
+	generation_radius = generation_settings.generation_radius
+	preview_subdivisions = generation_settings.preview_subdivisions
+	height_scale = generation_settings.height_scale
+	ridge_count = generation_settings.ridge_count
+	ridge_strength = generation_settings.ridge_strength
+	noise_frequency = generation_settings.noise_frequency
+	noise_strength = generation_settings.noise_strength
+
+
+func _build_features() -> void:
+	_features.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(seed)
+	for index: int in range(ridge_count):
+		_features.append({
+			"center": Vector2(
+				rng.randf_range(-float(generation_radius) * 0.75, float(generation_radius) * 0.75),
+				rng.randf_range(-float(generation_radius) * 0.75, float(generation_radius) * 0.75)
+			),
+			"radius_x": rng.randf_range(2.4, 8.0),
+			"radius_z": rng.randf_range(3.0, 12.0),
+			"strength": rng.randf_range(0.55, 1.0) * ridge_strength,
+			"sign": -1.0 if rng.randf() < 0.25 else 1.0
+		})
 
 
 func _rebuild_preview_mesh() -> void:
@@ -132,12 +196,24 @@ func _rebuild_preview_mesh() -> void:
 
 
 func _height(x: float, z: float) -> float:
-	var blocker_ridge := exp(-pow((x - 5.0) / 2.6, 2.0) - pow((z + 6.0) / 4.6, 2.0)) * 3.15
-	var left_ridge := exp(-pow((x + 10.0) / 3.8, 2.0) - pow((z - 2.0) / 10.0, 2.0)) * 2.4
-	var plateau := exp(-pow((x - 9.0) / 7.5, 2.0) - pow((z + 12.0) / 6.5, 2.0)) * 1.4
-	var trench := -exp(-pow((x + 1.0) / 4.0, 2.0) - pow((z - 9.0) / 5.0, 2.0)) * 1.0
-	var waves := sin(x * 0.35) * cos(z * 0.28) * 0.28
-	return (blocker_ridge + left_ridge + plateau + trench + waves) * height_scale
+	var feature_height := 0.0
+	for feature: Dictionary in _features:
+		var center: Vector2 = feature["center"]
+		var radius_x := float(feature["radius_x"])
+		var radius_z := float(feature["radius_z"])
+		var strength := float(feature["strength"])
+		var sign := float(feature["sign"])
+		feature_height += exp(
+			-pow((x - center.x) / radius_x, 2.0)
+			- pow((z - center.y) / radius_z, 2.0)
+		) * strength * sign
+
+	var seeded_phase := float(abs(seed) % 997) * 0.01
+	var waves := (
+		sin((x + seeded_phase) * noise_frequency)
+		* cos((z - seeded_phase) * noise_frequency * 0.83)
+	) * noise_strength
+	return (feature_height + waves) * height_scale
 
 
 func _normal_from_height(position: Vector3) -> Vector3:

@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/terrain/terrain_world.gd" id="1_terrain"]
+[ext_resource type="Script" path="res://scenes/terrain/terrain_generation_settings.gd" id="2_generation_settings"]
 
 [sub_resource type="Shader" id="Shader_preview"]
 code = "shader_type spatial;
@@ -26,8 +27,20 @@ show_checkered = true
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_preview"]
 shader = SubResource("Shader_preview")
 
+[sub_resource type="Resource" id="Resource_generation_settings"]
+script = ExtResource("2_generation_settings")
+seed = 1001
+generation_radius = 30
+preview_subdivisions = 56
+height_scale = 2.4
+ridge_count = 5
+ridge_strength = 2.4
+noise_frequency = 0.18
+noise_strength = 0.35
+
 [node name="TerrainWorld" type="Node3D"]
 script = ExtResource("1_terrain")
+generation_settings = SubResource("Resource_generation_settings")
 height_scale = 2.4
 preview_material = SubResource("ShaderMaterial_preview")
 

@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/match_hud/match_hud.gd" id="1_hud"]
+
+[node name="MatchHud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="HudPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 420.0
+offset_bottom = 174.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="HudPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="HudPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TankNameLabel" type="Label" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tank"
+
+[node name="HpBar" type="ProgressBar" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="HpLabel" type="Label" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "HP 100 / 100"
+
+[node name="AmmoLabel" type="Label" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ammo - / -"
+
+[node name="ReloadBar" type="ProgressBar" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+max_value = 1.0
+value = 1.0
+show_percentage = false
+
+[node name="CaptureLabel" type="Label" parent="HudPanel/MarginContainer/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Capture: -"

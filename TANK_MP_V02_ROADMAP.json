@@ -344,7 +344,7 @@
         "id": "ABC0-v02-roadmap",
         "owner": "Charlie",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "TANK_MP_V02_ROADMAP.json",
           "TANK_MP_FEATURE_ROADMAP.json",
@@ -356,7 +356,7 @@
         "id": "ABC1-v02-resource-models",
         "owner": "Bob",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/tank/vehicle_definition.gd",
           "scenes/tank/weapon_stats.gd",
@@ -371,7 +371,7 @@
         "id": "ABC2-v02-tank-runtime",
         "owner": "Charlie",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/tank/tank_controller.gd",
           "scenes/tank/tank.tscn",
@@ -384,7 +384,7 @@
         "id": "ABC3-v02-lobby-selection",
         "owner": "Alice",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/ui/lobby_start_screen.tscn",
           "scenes/ui/lobby_start_screen.gd",
@@ -396,7 +396,7 @@
         "id": "ABC4-v02-terrain-seed",
         "owner": "Charlie",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/terrain/terrain_generation_settings.gd",
           "scenes/terrain/terrain_world.gd",
@@ -410,7 +410,7 @@
         "id": "ABC5-v02-hud",
         "owner": "Bob",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/ui/match_hud/**",
           "scenes/tank_game/tank_game.tscn",
@@ -422,7 +422,7 @@
         "id": "ABC6-v02-capture-points",
         "owner": "Charlie",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "scenes/capture_point/**",
           "scenes/vehicle_test/vehicle_test.tscn",
@@ -434,7 +434,7 @@
         "id": "ABC7-v02-integration-tests",
         "owner": "Charlie",
         "mode": "worker",
-        "status": "planned",
+        "status": "completed",
         "allowed_files": [
           "TANK_MP_V02_ROADMAP.json",
           "TANK_MP_RUNBOOK.md",

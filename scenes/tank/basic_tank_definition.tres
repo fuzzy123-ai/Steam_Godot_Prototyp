@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/vehicle_definition.gd" id="1_vehicle_definition"]
+[ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="2_tank_scene"]
+[ext_resource type="PackedScene" path="res://assets/low_poly_tanks/tank_battle_bg.fbx" id="3_visual_scene"]
+[ext_resource type="Resource" path="res://scenes/tank/basic_tank_stats.tres" id="4_vehicle_stats"]
+[ext_resource type="Resource" path="res://scenes/tank/basic_weapon_stats.tres" id="5_weapon_stats"]
+
+[resource]
+script = ExtResource("1_vehicle_definition")
+vehicle_id = &"basic_tank"
+display_name = "Basic Tank"
+description = "Balanced baseline tank with the existing prototype movement and cannon tuning."
+tank_scene = ExtResource("2_tank_scene")
+visual_scene = ExtResource("3_visual_scene")
+stats = ExtResource("4_vehicle_stats")
+weapon_stats = ExtResource("5_weapon_stats")
+preview_color = Color(0.24, 0.36, 0.42, 1)
+sort_order = 0

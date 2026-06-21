@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/weapon_stats.gd" id="1_weapon_stats"]
+[ext_resource type="PackedScene" path="res://scenes/projectile/projectile.tscn" id="2_projectile"]
+
+[resource]
+script = ExtResource("1_weapon_stats")
+weapon_name = "Rapid Cannon"
+damage = 25.0
+projectile_speed = 48.0
+reload_seconds = 0.55
+ammo_capacity = 4
+spawned_projectile = ExtResource("2_projectile")
+can_fire_while_reloading = false
+line_of_fire_required = true

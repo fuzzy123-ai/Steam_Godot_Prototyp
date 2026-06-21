@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="1_tank"]
 [ext_resource type="PackedScene" path="res://scenes/target_dummy/target_dummy.tscn" id="2_target_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="3_test_terrain"]
 [ext_resource type="Script" path="res://scenes/camera/tank_camera_controller.gd" id="4_camera_controller"]
+[ext_resource type="PackedScene" path="res://scenes/capture_point/capture_point.tscn" id="5_capture_point"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blocker"]
 albedo_color = Color(0.36, 0.32, 0.3, 1)
@@ -33,7 +34,7 @@ shape = SubResource("BoxShape3D_blocker")
 
 [node name="Tanks" type="Node3D" parent="."]
 
-[node name="PlayerTank" parent="Tanks" instance=ExtResource("1_tank")]
+[node name="PlayerTank" parent="Tanks" groups=["capture_unit"] instance=ExtResource("1_tank")]
 projectile_parent_path = NodePath("../../Projectiles")
 terrain_probe_path = NodePath("../../Terrain")
 
@@ -46,6 +47,16 @@ position = Vector3(0, 0, -12)
 position = Vector3(5, 0, -12)
 
 [node name="Projectiles" type="Node3D" parent="."]
+
+[node name="CapturePoints" type="Node3D" parent="."]
+
+[node name="Alpha" parent="CapturePoints" instance=ExtResource("5_capture_point")]
+position = Vector3(-8, 0, -4)
+point_id = &"alpha"
+
+[node name="Bravo" parent="CapturePoints" instance=ExtResource("5_capture_point")]
+position = Vector3(9, 0, 7)
+point_id = &"bravo"
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("4_camera_controller")

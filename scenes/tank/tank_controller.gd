@@ -1,8 +1,15 @@
 extends CharacterBody3D
 
 const VehicleStatsScript := preload("res://scenes/tank/vehicle_stats.gd")
+const WeaponStatsScript := preload("res://scenes/tank/weapon_stats.gd")
+
+signal health_changed(current_health: float, max_health: float)
+signal ammo_changed(current_ammo: int, ammo_capacity: int)
+signal reload_changed(reload_remaining: float, reload_seconds: float)
 
 @export var stats: Resource
+@export var weapon_stats: Resource
+@export var vehicle_definition: Resource
 @export var aim_line_width: float = 0.08
 @export var aim_line_height: float = 0.08
 @export var aim_target_tolerance: float = 0.35
@@ -25,16 +32,24 @@ var _aim_target: Vector3
 var _has_aim_target := false
 var _aim_is_blocked := false
 var _active_stats: Resource
+var _active_weapon_stats: Resource
+var max_health: float = 100.0
 var health: float = 100.0
 var _fire_cooldown_remaining := 0.0
+var current_ammo: int = 0
+var ammo_capacity: int = 0
 var _terrain_probe: Node
 var current_slope_angle_degrees: float = 0.0
 var current_slope_speed_factor: float = 1.0
 
 
 func _ready() -> void:
-	_active_stats = stats if stats != null else VehicleStatsScript.new()
-	health = _stat_float(&"health", 100.0)
+	if vehicle_definition != null:
+		apply_vehicle_definition(vehicle_definition)
+	else:
+		_active_stats = stats if stats != null else VehicleStatsScript.new()
+		_active_weapon_stats = weapon_stats if weapon_stats != null else WeaponStatsScript.new()
+		_reset_combat_state()
 	_terrain_probe = get_node_or_null(terrain_probe_path) if not terrain_probe_path.is_empty() else null
 
 
@@ -43,6 +58,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_fire_cooldown_remaining = maxf(0.0, _fire_cooldown_remaining - delta)
+	reload_changed.emit(_fire_cooldown_remaining, _weapon_float(&"reload_seconds", _stat_float(&"fire_cooldown_seconds", 0.8)))
 
 	var drive_input := Input.get_axis("tank_reverse", "tank_forward")
 	var turn_input := Input.get_axis("tank_turn_right", "tank_turn_left")
@@ -152,10 +168,16 @@ func _draw_aim_line(start: Vector3, end: Vector3) -> void:
 
 
 func _try_fire() -> void:
-	if projectile_scene == null or _fire_cooldown_remaining > 0.0:
+	var active_projectile_scene := _weapon_scene(&"spawned_projectile", projectile_scene)
+	if active_projectile_scene == null or _fire_cooldown_remaining > 0.0:
+		return
+	if current_ammo <= 0:
+		ammo_changed.emit(current_ammo, ammo_capacity)
+		return
+	if _weapon_bool(&"line_of_fire_required", false) and _aim_is_blocked:
 		return
 
-	var projectile := projectile_scene.instantiate()
+	var projectile := active_projectile_scene.instantiate()
 	if not projectile is Node3D:
 		projectile.queue_free()
 		return
@@ -174,10 +196,13 @@ func _try_fire() -> void:
 			"launch",
 			self,
 			_get_turret_forward(),
-			_stat_float(&"shot_speed", 42.0),
-			_stat_float(&"shot_damage", 35.0)
+			_weapon_float(&"projectile_speed", _stat_float(&"shot_speed", 42.0)),
+			_weapon_float(&"damage", _stat_float(&"shot_damage", 35.0))
 		)
-	_fire_cooldown_remaining = _stat_float(&"fire_cooldown_seconds", 0.8)
+	current_ammo = maxi(0, current_ammo - 1)
+	ammo_changed.emit(current_ammo, ammo_capacity)
+	_fire_cooldown_remaining = _weapon_float(&"reload_seconds", _stat_float(&"fire_cooldown_seconds", 0.8))
+	reload_changed.emit(_fire_cooldown_remaining, _fire_cooldown_remaining)
 
 
 func _get_turret_forward() -> Vector3:
@@ -229,6 +254,39 @@ func _calculate_slope_speed_factor(slope_angle_degrees: float) -> float:
 	return lerpf(1.0, min_factor, clampf(slope_t * strength, 0.0, 1.0))
 
 
+func apply_vehicle_definition(definition: Resource) -> void:
+	vehicle_definition = definition
+	var definition_stats = definition.get(&"stats")
+	var definition_weapon_stats = definition.get(&"weapon_stats")
+	_active_stats = definition_stats if definition_stats != null else (stats if stats != null else VehicleStatsScript.new())
+	_active_weapon_stats = definition_weapon_stats if definition_weapon_stats != null else (weapon_stats if weapon_stats != null else WeaponStatsScript.new())
+	stats = _active_stats
+	weapon_stats = _active_weapon_stats
+	_reset_combat_state()
+
+
+func apply_hit(hit_data: Dictionary) -> void:
+	var damage := float(hit_data.get("damage", 0.0))
+	health = maxf(0.0, health - damage)
+	health_changed.emit(health, max_health)
+
+
+func reset_health() -> void:
+	health = max_health
+	health_changed.emit(health, max_health)
+
+
+func _reset_combat_state() -> void:
+	max_health = _stat_float(&"health", 100.0)
+	health = max_health
+	ammo_capacity = _weapon_int(&"ammo_capacity", 0)
+	current_ammo = ammo_capacity
+	_fire_cooldown_remaining = 0.0
+	health_changed.emit(health, max_health)
+	ammo_changed.emit(current_ammo, ammo_capacity)
+	reload_changed.emit(0.0, _weapon_float(&"reload_seconds", _stat_float(&"fire_cooldown_seconds", 0.8)))
+
+
 func _stat_float(property_name: StringName, fallback: float) -> float:
 	if _active_stats == null:
 		return fallback
@@ -236,3 +294,39 @@ func _stat_float(property_name: StringName, fallback: float) -> float:
 	if value == null:
 		return fallback
 	return float(value)
+
+
+func _weapon_float(property_name: StringName, fallback: float) -> float:
+	if _active_weapon_stats == null:
+		return fallback
+	var value = _active_weapon_stats.get(property_name)
+	if value == null:
+		return fallback
+	return float(value)
+
+
+func _weapon_int(property_name: StringName, fallback: int) -> int:
+	if _active_weapon_stats == null:
+		return fallback
+	var value = _active_weapon_stats.get(property_name)
+	if value == null:
+		return fallback
+	return int(value)
+
+
+func _weapon_bool(property_name: StringName, fallback: bool) -> bool:
+	if _active_weapon_stats == null:
+		return fallback
+	var value = _active_weapon_stats.get(property_name)
+	if value == null:
+		return fallback
+	return bool(value)
+
+
+func _weapon_scene(property_name: StringName, fallback: PackedScene) -> PackedScene:
+	if _active_weapon_stats == null:
+		return fallback
+	var value = _active_weapon_stats.get(property_name)
+	if value is PackedScene:
+		return value
+	return fallback

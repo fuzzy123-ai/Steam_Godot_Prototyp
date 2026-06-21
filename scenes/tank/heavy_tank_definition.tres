@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/vehicle_definition.gd" id="1_vehicle_definition"]
+[ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="2_tank_scene"]
+[ext_resource type="PackedScene" path="res://assets/low_poly_tanks/tank_battle_bg.fbx" id="3_visual_scene"]
+[ext_resource type="Script" path="res://scenes/tank/vehicle_stats.gd" id="4_vehicle_stats_script"]
+[ext_resource type="Resource" path="res://scenes/tank/heavy_weapon_stats.tres" id="5_weapon_stats"]
+
+[sub_resource type="Resource" id="Resource_heavy_vehicle_stats"]
+script = ExtResource("4_vehicle_stats_script")
+vehicle_name = "Heavy Tank"
+max_forward_speed = 5.8
+max_reverse_speed = 2.8
+track_turn_speed = 1.25
+acceleration = 12.0
+brake_strength = 24.0
+turret_turn_speed = 5.2
+health = 160.0
+mass = 32.0
+slope_start_angle_degrees = 8.0
+max_climb_angle_degrees = 35.0
+min_slope_speed_factor = 0.35
+slope_slowdown_strength = 0.65
+shot_damage = 55.0
+shot_speed = 38.0
+fire_cooldown_seconds = 1.35
+
+[resource]
+script = ExtResource("1_vehicle_definition")
+vehicle_id = &"heavy_tank"
+display_name = "Heavy Tank"
+description = "Durable assault tank with stronger shells, slower handling, and a longer reload."
+tank_scene = ExtResource("2_tank_scene")
+visual_scene = ExtResource("3_visual_scene")
+stats = SubResource("Resource_heavy_vehicle_stats")
+weapon_stats = ExtResource("5_weapon_stats")
+preview_color = Color(0.62, 0.18, 0.12, 1)
+sort_order = 20

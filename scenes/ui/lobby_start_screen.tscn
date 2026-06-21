@@ -175,6 +175,60 @@ layout_mode = 2
 text = "Map: Proving Grounds | Mode: sandbox test"
 autowrap_mode = 3
 
+[node name="MatchSetupPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
+layout_mode = 2
+
+[node name="MatchSetupMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="MatchSetupStack" type="VBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TankRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TankLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack/TankRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Tank"
+
+[node name="TankOptionButton" type="OptionButton" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack/TankRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SeedRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SeedLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack/SeedRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Seed"
+
+[node name="SeedInput" type="LineEdit" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack/SeedRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Optional numeric seed"
+
+[node name="RandomizeSeedButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack/SeedRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Randomize"
+
+[node name="MatchSetupLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MatchSetupPanel/MatchSetupMargin/MatchSetupStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tank: Basic | Seed: random on match start"
+autowrap_mode = 3
+
 [node name="MapPreviewPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
 custom_minimum_size = Vector2(420, 360)
 layout_mode = 2
