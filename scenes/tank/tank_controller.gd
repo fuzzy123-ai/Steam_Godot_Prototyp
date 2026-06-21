@@ -97,11 +97,13 @@ func _set_aim_target(target: Vector3, delta: float) -> void:
 	if to_target.length_squared() <= 0.001:
 		return
 	var target_yaw := atan2(-to_target.x, -to_target.z)
-	turret_pivot.rotation.y = rotate_toward(
-		turret_pivot.rotation.y,
+	var turret_global_rotation := turret_pivot.global_rotation
+	turret_global_rotation.y = rotate_toward(
+		turret_global_rotation.y,
 		target_yaw,
 		_stat_float(&"turret_turn_speed", 8.0) * delta
 	)
+	turret_pivot.global_rotation = turret_global_rotation
 
 
 func _update_aim_line() -> void:
