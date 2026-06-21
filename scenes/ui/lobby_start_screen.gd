@@ -6,6 +6,7 @@ const TANK_OPTIONS: Array[Dictionary] = [
 	{"id": "basic_tank", "label": "Basic"},
 	{"id": "light_tank", "label": "Light"},
 	{"id": "heavy_tank", "label": "Heavy"},
+	{"id": "spider_mech", "label": "Spider Mech"},
 ]
 const ERROR_NO_RESPONSE := 0
 const ERROR_SUCCESS := 1
@@ -276,7 +277,7 @@ func _refresh_match_setup_label() -> void:
 	var seed_text := "default" if seed_input.text.strip_edges().is_empty() else str(setup["seed"])
 	var preview_seed_text := str(_get_preview_seed_value())
 	var validity := "" if _seed_is_valid() else " | seed must be numeric"
-	match_setup_label.text = "Tank: %s | Seed: %s | Preview: %s%s" % [
+	match_setup_label.text = "Unit: %s | Seed: %s | Preview: %s%s" % [
 		str(setup["tank_label"]),
 		seed_text,
 		preview_seed_text,

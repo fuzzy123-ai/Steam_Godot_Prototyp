@@ -15,6 +15,8 @@ extends Node
 @export var sync_projectile_spawns: bool = true
 @export var synced_projectile_scene: PackedScene
 
+const VEHICLE_VISUAL_OVERRIDE_NAME := "VehicleVisualOverride"
+
 var match_started: bool = false
 
 
@@ -87,6 +89,42 @@ func _apply_match_setup(match_setup: Dictionary) -> void:
 		selected_vehicle = default_vehicle_definition
 	if selected_vehicle != null and preview_tank.has_method("apply_vehicle_definition"):
 		preview_tank.call("apply_vehicle_definition", selected_vehicle)
+	_apply_vehicle_visual(selected_vehicle)
+
+
+func _apply_vehicle_visual(definition: Resource) -> void:
+	if preview_tank == null:
+		return
+
+	var old_visual := preview_tank.get_node_or_null(VEHICLE_VISUAL_OVERRIDE_NAME)
+	if old_visual != null:
+		old_visual.queue_free()
+
+	var use_override := bool(definition.get("use_visual_override")) if definition != null and definition.get("use_visual_override") != null else false
+	_set_default_vehicle_visuals_hidden(use_override and bool(definition.get("hide_default_visuals")))
+	if not use_override:
+		return
+
+	var visual_scene = definition.get("visual_scene")
+	if not visual_scene is PackedScene:
+		return
+	var visual := (visual_scene as PackedScene).instantiate()
+	if not visual is Node3D:
+		visual.queue_free()
+		return
+
+	visual.name = VEHICLE_VISUAL_OVERRIDE_NAME
+	preview_tank.add_child(visual)
+	var visual_node := visual as Node3D
+	visual_node.position = definition.get("visual_offset") as Vector3
+	visual_node.rotation_degrees = definition.get("visual_rotation_degrees") as Vector3
+	visual_node.scale = definition.get("visual_scale") as Vector3
+
+
+func _set_default_vehicle_visuals_hidden(should_hide: bool) -> void:
+	var low_poly_body := preview_tank.get_node_or_null("LowPolyBody")
+	if low_poly_body != null:
+		low_poly_body.visible = not should_hide
 
 
 func _on_terrain_crater_applied(event: Dictionary) -> void:
@@ -236,6 +274,8 @@ func _match_vehicle_id(match_setup: Dictionary) -> StringName:
 			return &"light_tank"
 		&"heavy":
 			return &"heavy_tank"
+		&"spider":
+			return &"spider_mech"
 		_:
 			return raw_id
 

@@ -1,0 +1,29 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/spider_mech_visual.gd" id="1_visual_script"]
+[ext_resource type="PackedScene" path="res://assets/mech_spider/SK_ISO_Mech.fbx" id="2_mech_model"]
+[ext_resource type="Texture2D" path="res://assets/mech_spider/Textures/T_Mech_Base_Color.png" id="3_base_color"]
+[ext_resource type="Texture2D" path="res://assets/mech_spider/Textures/T_Mech_Normal.png" id="4_normal"]
+[ext_resource type="Texture2D" path="res://assets/mech_spider/Textures/T_Mech_Metallic.png" id="5_metallic"]
+[ext_resource type="Texture2D" path="res://assets/mech_spider/Textures/T_Mech_Roughness.png" id="6_roughness"]
+[ext_resource type="Texture2D" path="res://assets/mech_spider/Textures/T_Mech_Emissive.png" id="7_emissive"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mech"]
+albedo_texture = ExtResource("3_base_color")
+metallic = 1.0
+metallic_texture = ExtResource("5_metallic")
+roughness = 0.78
+roughness_texture = ExtResource("6_roughness")
+emission_enabled = true
+emission = Color(0.38, 0.62, 0.95, 1)
+emission_texture = ExtResource("7_emissive")
+emission_energy_multiplier = 0.7
+normal_enabled = true
+normal_texture = ExtResource("4_normal")
+
+[node name="SpiderMechVisual" type="Node3D"]
+script = ExtResource("1_visual_script")
+mech_material = SubResource("StandardMaterial3D_mech")
+
+[node name="Model" parent="." instance=ExtResource("2_mech_model")]
+transform = Transform3D(0.008, 0, 0, 0, 0.008, 0, 0, 0, 0.008, 0, 0, 0)

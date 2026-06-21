@@ -1,0 +1,121 @@
+{
+  "id": "tank_mp_mech_spider_abc",
+  "created": "2026-06-21",
+  "owner": "Charlie",
+  "status": "validation_passed",
+  "goal": "Add the downloaded mecha spider as a fourth selectable playable unit in the lobby, with its own stats, weapon tuning, and visible in-match model.",
+  "current_evidence": [
+    "Project already has VehicleDefinition, VehicleStats, and WeaponStats resources.",
+    "Lobby vehicle choices are currently hardcoded in res://scenes/ui/lobby_start_screen.gd.",
+    "TankGame already resolves selected vehicle ids against exported vehicle_definitions.",
+    "Downloaded asset folder contains SK_ISO_Mech.fbx, seven animation FBXs, and five PBR textures under C:/Users/nkatz/Downloads/Mech/."
+  ],
+  "non_goals": [
+    "Full spider leg animation blending",
+    "New locomotion physics",
+    "Dedicated spider weapon model or custom aiming rig",
+    "Networking changes beyond existing match setup vehicle selection",
+    "Balancing beyond first playable prototype values"
+  ],
+  "constraints": [
+    "Prefer node/scene/Inspector resources over hardcoded behavior.",
+    "Do not touch unrelated dirty files unless the vehicle integration requires the same file.",
+    "Do not stage existing unrelated dirty work: TANK_MP_RUNBOOK.md, TANK_MP_VFX_ABC_PLAN.md, scenes/vfx/, scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import, or unrelated VFX changes.",
+    "If tank_controller.gd must be edited, preserve existing uncommitted VFX additions and stage only the combined in-scope file if tests pass."
+  ],
+  "planned_unit": {
+    "vehicle_id": "spider_mech",
+    "display_name": "Spider Mech",
+    "design_intent": "Slower top speed than light tank, better slope handling than tracked tanks, medium health, fast turret response, lower ammo but quick precision shots."
+  },
+  "slices": [
+    {
+      "id": "ABC0-roadmap",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "TANK_MP_MECH_SPIDER_ABC_PLAN.json"
+      ],
+      "acceptance": "Roadmap records asset facts, scope, risks, slices, verification, and stop rules."
+    },
+    {
+      "id": "ABC1-doc-ux-audit",
+      "owner": "Alice",
+      "status": "done",
+      "mode": "explorer",
+      "scope": [
+        "read-only"
+      ],
+      "acceptance": "Return concise recommendations for lobby naming, stat language, and manual test wording; no file edits.",
+      "notes": "Recommended Spider Mech label, slope-ready walker description, precision skirmisher/hillfighter role, and manual gate wording."
+    },
+    {
+      "id": "ABC2-asset-import-audit",
+      "owner": "Bob",
+      "status": "done",
+      "mode": "explorer",
+      "scope": [
+        "read-only"
+      ],
+      "acceptance": "Return likely import/scale/material/animation risks for the Mech FBX and what the smoke test should assert.",
+      "notes": "Identified visual_scene not yet applied, lobby hardcoded options, TankGame definition list, FBX scale/orientation/material risks, and recommended wrapper scene plus smoke assertions."
+    },
+    {
+      "id": "ABC3-assets",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "assets/mech_spider/**"
+      ],
+      "acceptance": "Asset files are copied into the project, imported by Godot, and available as res:// paths."
+    },
+    {
+      "id": "ABC4-unit-resources",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "scenes/tank/spider_mech_*.tres",
+        "scenes/tank/spider_mech_visual.tscn",
+        "scenes/tank/vehicle_definition.gd"
+      ],
+      "acceptance": "Spider Mech has definition, stats, weapon stats, and visual transform tuning in resources/scene."
+    },
+    {
+      "id": "ABC5-selection-integration",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "scenes/ui/lobby_start_screen.gd",
+        "scenes/tank_game/tank_game.gd",
+        "scenes/tank_game/tank_game.tscn",
+        "scenes/tank/tank_controller.gd",
+        "runtime_logs/v02_runtime_smoke.gd"
+      ],
+      "acceptance": "Lobby exposes Spider Mech, TankGame resolves it, tank applies its stats/weapon/visual, and smoke proves selection can start.",
+      "notes": "Godot smoke passed with spider_mech selected: 4 ammo, 95 HP, visual override mesh count > 0, fire/reload/crater/capture still pass."
+    }
+  ],
+  "verification": [
+    "Godot headless smoke: E:/Godot_With_Steam/tools/godot-4.7/Godot_v4.7-stable_win64_console.exe --headless --path . --script runtime_logs/v02_runtime_smoke.gd",
+    "Focused import probe confirms the spider visual scene instantiates and contains visible MeshInstance3D descendants.",
+    "Git staged-files check confirms unrelated dirty files are not staged."
+  ],
+  "known_follow_ups": [
+    "FBX import reports missing internal SK_Mech_LOD*.fbm/Bake_* texture paths. The playable wrapper uses an explicit Godot material from the provided PBR textures, so this is deferred unless raw FBX material fidelity becomes a goal.",
+    "Separate animation FBXs are imported but not wired into gameplay. Idle/walk animation blending is deferred.",
+    "Spider Mech uses the existing tank controller/turret/muzzle path for v0.1 playability."
+  ],
+  "go_language": {
+    "go": "Spider Mech appears as a lobby choice, match starts with spider_mech setup, stats/weapon values apply, and the visual scene instantiates without runtime errors.",
+    "partial": "Spider Mech is selectable and playable but material scale or animation polish needs a follow-up.",
+    "no_go": "Mech asset cannot import, match startup breaks, or selection corrupts existing tank choices.",
+    "deferred": "Walk/idle/death animation blending, custom spider movement physics, and dedicated spider weapon hardpoint."
+  },
+  "stop_rules": [
+    "Stop on secrets or private credentials.",
+    "Stop on unrelated staged files.",
+    "Stop if imported asset licensing metadata forbids use.",
+    "Stop if Godot import/runtime errors cannot be fixed within this slice.",
+    "Stop rather than overwrite unrelated dirty work."
+  ]
+}

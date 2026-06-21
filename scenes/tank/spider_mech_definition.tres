@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/vehicle_definition.gd" id="1_vehicle_definition"]
+[ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="2_tank_scene"]
+[ext_resource type="PackedScene" path="res://scenes/tank/spider_mech_visual.tscn" id="3_visual_scene"]
+[ext_resource type="Script" path="res://scenes/tank/vehicle_stats.gd" id="4_vehicle_stats_script"]
+[ext_resource type="Resource" path="res://scenes/tank/spider_mech_weapon_stats.tres" id="5_weapon_stats"]
+
+[sub_resource type="Resource" id="Resource_spider_mech_stats"]
+script = ExtResource("4_vehicle_stats_script")
+vehicle_name = "Spider Mech"
+max_forward_speed = 7.2
+max_reverse_speed = 4.2
+track_turn_speed = 2.15
+acceleration = 18.0
+brake_strength = 20.0
+turret_turn_speed = 10.5
+health = 95.0
+mass = 16.0
+slope_start_angle_degrees = 14.0
+max_climb_angle_degrees = 48.0
+min_slope_speed_factor = 0.78
+slope_slowdown_strength = 0.25
+shot_damage = 30.0
+shot_speed = 50.0
+fire_cooldown_seconds = 0.65
+
+[resource]
+script = ExtResource("1_vehicle_definition")
+vehicle_id = &"spider_mech"
+display_name = "Spider Mech"
+description = "Slope-ready walker with medium armor, quick turret response, and low-ammo precision shots."
+tank_scene = ExtResource("2_tank_scene")
+visual_scene = ExtResource("3_visual_scene")
+use_visual_override = true
+visual_offset = Vector3(0, 0, 0)
+visual_rotation_degrees = Vector3(0, 0, 0)
+visual_scale = Vector3(1, 1, 1)
+hide_default_visuals = true
+stats = SubResource("Resource_spider_mech_stats")
+weapon_stats = ExtResource("5_weapon_stats")
+preview_color = Color(0.38, 0.62, 0.95, 1)
+sort_order = 30

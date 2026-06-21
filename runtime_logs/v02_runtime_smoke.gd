@@ -18,11 +18,32 @@ func _run() -> void:
 
 	print("STEP ready")
 	var lobby := game.get_node("UI/LobbyStartScreen")
+	var tank_option := lobby.find_child("TankOptionButton", true, false) as OptionButton
+	if tank_option == null:
+		print("FAIL tank option missing")
+		quit(1)
+		return
+	var spider_index := -1
+	for index: int in range(tank_option.item_count):
+		if tank_option.get_item_text(index) == "Spider Mech":
+			spider_index = index
+			break
+	if spider_index < 0:
+		print("FAIL spider option missing")
+		quit(1)
+		return
+	tank_option.select(spider_index)
+	if lobby.has_method("_on_match_setup_changed"):
+		lobby.call("_on_match_setup_changed", spider_index)
 	var setup: Dictionary = lobby.call("get_match_setup")
 	print("STEP setup tank=", setup.get("tank_id", ""), " seed=", setup.get("seed", -1))
 
 	var prepared: Dictionary = game.call("_prepare_match_setup", setup)
 	print("STEP prepared vehicle=", prepared.get("vehicle_id", ""), " seed=", prepared.get("seed", -1))
+	if StringName(prepared.get("vehicle_id", &"")) != &"spider_mech":
+		print("FAIL prepared spider vehicle=", prepared.get("vehicle_id", ""))
+		quit(1)
+		return
 
 	print("STEP start")
 	game.call("_start_match", prepared)
@@ -38,6 +59,23 @@ func _run() -> void:
 	print("STEP tank=", definition.get("vehicle_id") if definition != null else "none")
 	print("STEP ammo=", tank.get("current_ammo"), "/", tank.get("ammo_capacity"))
 	print("STEP hp=", tank.get("health"), "/", tank.get("max_health"))
+	if definition == null or definition.get("vehicle_id") != &"spider_mech":
+		print("FAIL spider definition not applied")
+		quit(1)
+		return
+	if int(tank.get("ammo_capacity")) != 4 or absf(float(tank.get("max_health")) - 95.0) > 0.01:
+		print("FAIL spider stats ammo=", tank.get("ammo_capacity"), " hp=", tank.get("max_health"))
+		quit(1)
+		return
+	var spider_visual := tank.get_node_or_null("VehicleVisualOverride")
+	if spider_visual == null:
+		print("FAIL spider visual missing")
+		quit(1)
+		return
+	if not spider_visual.has_method("get_mesh_count") or int(spider_visual.call("get_mesh_count")) <= 0:
+		print("FAIL spider visual meshes")
+		quit(1)
+		return
 	if debug_menu == null or not debug_menu.has_method("toggle_debug"):
 		print("FAIL debug menu missing")
 		quit(1)
