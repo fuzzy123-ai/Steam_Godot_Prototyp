@@ -29,7 +29,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(560, 340)
+custom_minimum_size = Vector2(1100, 640)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
@@ -39,57 +39,245 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="Stack" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+[node name="MainColumns" type="HBoxContainer" parent="CenterContainer/Panel/Margin"]
 layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="LeftStack" type="VBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack"]
 layout_mode = 2
 text = "Tank Multiplayer"
 horizontal_alignment = 1
 
-[node name="StatusLabel" type="Label" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="StatusLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Ready."
 autowrap_mode = 3
 
-[node name="HostButton" type="Button" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="ConnectionPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack"]
+layout_mode = 2
+
+[node name="ConnectionMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/ConnectionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ConnectionStack" type="VBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/ConnectionPanel/ConnectionMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ConnectionStatusLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/ConnectionPanel/ConnectionMargin/ConnectionStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Connection: Not connected"
+autowrap_mode = 3
+
+[node name="RoleStatusLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/ConnectionPanel/ConnectionMargin/ConnectionStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Role: Offline"
+autowrap_mode = 3
+
+[node name="PingStatusLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/ConnectionPanel/ConnectionMargin/ConnectionStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ping: offline"
+autowrap_mode = 3
+
+[node name="LobbyControlsPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack"]
+layout_mode = 2
+
+[node name="ControlsMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ControlsStack" type="VBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HostButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Host Steam Lobby"
 
-[node name="LobbyIdRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="LobbyIdRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="LobbyIdInput" type="LineEdit" parent="CenterContainer/Panel/Margin/Stack/LobbyIdRow"]
+[node name="LobbyIdInput" type="LineEdit" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack/LobbyIdRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Steam Lobby ID"
 
-[node name="CopyButton" type="Button" parent="CenterContainer/Panel/Margin/Stack/LobbyIdRow"]
+[node name="CopyButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack/LobbyIdRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Copy"
 
-[node name="PasteButton" type="Button" parent="CenterContainer/Panel/Margin/Stack/LobbyIdRow"]
+[node name="PasteButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack/LobbyIdRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Paste"
 
-[node name="JoinButton" type="Button" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="JoinButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Join Lobby"
 
-[node name="StartMatchButton" type="Button" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="StartMatchButton" type="Button" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/LobbyControlsPanel/ControlsMargin/ControlsStack"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start Match"
 
-[node name="HintLabel" type="Label" parent="CenterContainer/Panel/Margin/Stack"]
+[node name="PeerListPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack"]
 layout_mode = 2
-text = "Host copies the lobby ID. Client pastes it, joins, then waits for host start."
+size_flags_vertical = 3
+
+[node name="PeerMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/PeerListPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="PeerListLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/LeftStack/PeerListPanel/PeerMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Players:\n- Waiting for lobby"
 autowrap_mode = 3
+
+[node name="RightStack" type="VBoxContainer" parent="CenterContainer/Panel/Margin/MainColumns"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="MapTitleLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
+layout_mode = 2
+text = "Map Preview"
+horizontal_alignment = 1
+
+[node name="SelectedMapLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Map: Proving Grounds | Mode: sandbox test"
+autowrap_mode = 3
+
+[node name="MapPreviewPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
+custom_minimum_size = Vector2(420, 360)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MapPreview" type="Control" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel"]
+layout_mode = 2
+
+[node name="Ground" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.18, 0.29, 0.2, 1)
+
+[node name="RidgeA" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 54.0
+offset_right = 236.0
+offset_bottom = 92.0
+color = Color(0.33, 0.42, 0.23, 1)
+
+[node name="RidgeB" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 0
+offset_left = 230.0
+offset_top = 236.0
+offset_right = 392.0
+offset_bottom = 284.0
+color = Color(0.3, 0.38, 0.22, 1)
+
+[node name="CraterHint" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 138.0
+offset_right = 252.0
+offset_bottom = 218.0
+color = Color(0.11, 0.12, 0.1, 1)
+
+[node name="SpawnA" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 0
+offset_left = 44.0
+offset_top = 284.0
+offset_right = 86.0
+offset_bottom = 326.0
+color = Color(0.22, 0.48, 0.9, 1)
+
+[node name="SpawnB" type="ColorRect" parent="CenterContainer/Panel/Margin/MainColumns/RightStack/MapPreviewPanel/MapPreview"]
+layout_mode = 0
+offset_left = 336.0
+offset_top = 34.0
+offset_right = 378.0
+offset_bottom = 76.0
+color = Color(0.9, 0.28, 0.2, 1)
+
+[node name="MapNoteLabel" type="Label" parent="CenterContainer/Panel/Margin/MainColumns/RightStack"]
+layout_mode = 2
+text = "Level selection will plug into this preview later. Current map is a fixed sandbox for lobby and terrain tests."
+autowrap_mode = 3
+
+[node name="LoadingOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LoadingMargin" type="MarginContainer" parent="LoadingOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="LoadingStack" type="VBoxContainer" parent="LoadingOverlay/LoadingMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LoadingTitleLabel" type="Label" parent="LoadingOverlay/LoadingMargin/LoadingStack"]
+layout_mode = 2
+text = "Loading"
+horizontal_alignment = 1
+
+[node name="LoadingStepLabel" type="Label" parent="LoadingOverlay/LoadingMargin/LoadingStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Preparing..."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="LoadingBar" type="ProgressBar" parent="LoadingOverlay/LoadingMargin/LoadingStack"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 0.0

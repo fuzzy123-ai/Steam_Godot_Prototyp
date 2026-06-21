@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank/tank_controller.gd" id="1_tank"]
 
@@ -16,6 +16,14 @@ top_radius = 0.07
 bottom_radius = 0.07
 height = 1.4
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chassis"]
+albedo_color = Color(0.24, 0.36, 0.42, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_turret"]
+albedo_color = Color(0.14, 0.18, 0.21, 1)
+roughness = 0.76
+
 [node name="Tank" type="CharacterBody3D"]
 script = ExtResource("1_tank")
 
@@ -26,6 +34,7 @@ shape = SubResource("BoxShape_tank")
 [node name="Chassis" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.3, 0)
 mesh = SubResource("BoxMesh_chassis")
+surface_material_override/0 = SubResource("StandardMaterial3D_chassis")
 
 [node name="TurretPivot" type="Node3D" parent="."]
 unique_name_in_owner = true
@@ -33,11 +42,13 @@ position = Vector3(0, 0.7, -0.1)
 
 [node name="Turret" type="MeshInstance3D" parent="TurretPivot"]
 mesh = SubResource("BoxMesh_turret")
+surface_material_override/0 = SubResource("StandardMaterial3D_turret")
 
 [node name="Barrel" type="MeshInstance3D" parent="TurretPivot"]
 position = Vector3(0, 0, -0.85)
 rotation = Vector3(1.5707964, 0, 0)
 mesh = SubResource("CylinderMesh_barrel")
+surface_material_override/0 = SubResource("StandardMaterial3D_turret")
 
 [node name="Muzzle" type="Marker3D" parent="TurretPivot"]
 unique_name_in_owner = true
