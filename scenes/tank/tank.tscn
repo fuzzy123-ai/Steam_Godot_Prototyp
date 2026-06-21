@@ -29,15 +29,23 @@ albedo_color = Color(0.14, 0.18, 0.21, 1)
 roughness = 0.76
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aim_clear"]
+no_depth_test = true
+cull_mode = 2
+shading_mode = 0
 albedo_color = Color(0.1, 0.95, 0.28, 1)
 emission_enabled = true
-emission = Color(0.1, 0.95, 0.28, 1)
+emission = Color(0.1, 1, 0.25, 1)
+emission_energy_multiplier = 2.5
 roughness = 0.4
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aim_blocked"]
+no_depth_test = true
+cull_mode = 2
+shading_mode = 0
 albedo_color = Color(1, 0.12, 0.08, 1)
 emission_enabled = true
 emission = Color(1, 0.12, 0.08, 1)
+emission_energy_multiplier = 2.5
 roughness = 0.4
 
 [sub_resource type="ImmediateMesh" id="ImmediateMesh_aim_line"]
@@ -45,6 +53,8 @@ roughness = 0.4
 [node name="Tank" type="CharacterBody3D"]
 script = ExtResource("1_tank")
 stats = ExtResource("4_basic_stats")
+aim_line_width = 0.28
+aim_line_height = 0.9
 aim_clear_material = SubResource("StandardMaterial3D_aim_clear")
 aim_blocked_material = SubResource("StandardMaterial3D_aim_blocked")
 projectile_scene = ExtResource("2_projectile")

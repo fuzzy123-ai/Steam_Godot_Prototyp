@@ -2,25 +2,40 @@
 
 [ext_resource type="Script" path="res://scenes/terrain/terrain_world.gd" id="1_terrain"]
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
-size = Vector2(48, 48)
+[sub_resource type="Shader" id="Shader_preview"]
+code = "shader_type spatial;
+render_mode unshaded, cull_disabled;
 
-[sub_resource type="BoxShape3D" id="BoxShape_ground"]
-size = Vector3(48, 0.2, 48)
+void fragment() {
+	ALBEDO = COLOR.rgb;
+	ROUGHNESS = 1.0;
+}"
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.18, 0.32, 0.19, 1)
-roughness = 1.0
+[sub_resource type="Terrain3DMaterial" id="Terrain3DMaterial_gameplay"]
+_shader_parameters = {
+"height_blending": true,
+"macro_variation1": Color(0.28, 0.33, 0.23, 1),
+"macro_variation2": Color(0.64, 0.55, 0.38, 1),
+"noise1_scale": 0.035,
+"noise2_scale": 0.09,
+"noise3_scale": 0.22,
+"vertex_normals_distance": 128.0
+}
+show_checkered = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_preview"]
+shader = SubResource("Shader_preview")
 
 [node name="TerrainWorld" type="Node3D"]
 script = ExtResource("1_terrain")
+height_scale = 2.4
+preview_material = SubResource("ShaderMaterial_preview")
 
-[node name="GroundBody" type="StaticBody3D" parent="."]
+[node name="Terrain3D" type="Terrain3D" parent="."]
+visible = false
+material = SubResource("Terrain3DMaterial_gameplay")
+mesh_lods = 6
+top_level = true
 
-[node name="GroundMesh" type="MeshInstance3D" parent="GroundBody"]
-mesh = SubResource("PlaneMesh_ground")
-surface_material_override/0 = SubResource("StandardMaterial3D_ground")
-
-[node name="GroundCollision" type="CollisionShape3D" parent="GroundBody"]
-position = Vector3(0, -0.1, 0)
-shape = SubResource("BoxShape_ground")
+[node name="PreviewMesh" type="MeshInstance3D" parent="."]
+cast_shadow = 1

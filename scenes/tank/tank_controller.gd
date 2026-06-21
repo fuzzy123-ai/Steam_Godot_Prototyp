@@ -72,14 +72,6 @@ func _aim_turret_at_mouse(delta: float) -> void:
 	var mouse_pos := get_viewport().get_mouse_position()
 	var ray_origin := camera.project_ray_origin(mouse_pos)
 	var ray_dir := camera.project_ray_normal(mouse_pos)
-	var ray_end := ray_origin + ray_dir * 1000.0
-	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end, aim_obstruction_mask, [get_rid()])
-	query.hit_from_inside = false
-	var world_hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not world_hit.is_empty():
-		_set_aim_target(world_hit["position"], delta)
-		return
-
 	var ground_plane := Plane(Vector3.UP, global_position.y)
 	var hit = ground_plane.intersects_ray(ray_origin, ray_dir)
 	if hit == null:
@@ -118,21 +110,20 @@ func _update_aim_line() -> void:
 		aim_line.hide()
 		return
 
-	var query := PhysicsRayQueryParameters3D.create(start, end, aim_obstruction_mask, [get_rid()])
+	var line_offset := Vector3.UP * aim_line_height
+	var query := PhysicsRayQueryParameters3D.create(start + line_offset, end + line_offset, aim_obstruction_mask, [get_rid()])
 	query.hit_from_inside = false
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	_aim_is_blocked = not hit.is_empty()
 	if _aim_is_blocked:
 		var hit_position: Vector3 = hit["position"]
 		_aim_is_blocked = hit_position.distance_to(end) > aim_target_tolerance
-		if _aim_is_blocked:
-			end = hit_position
 
 	aim_line.show()
 	aim_line.material_override = aim_blocked_material if _aim_is_blocked else aim_clear_material
 	_draw_aim_line(
-		aim_line.to_local(start + Vector3.UP * aim_line_height),
-		aim_line.to_local(end + Vector3.UP * aim_line_height)
+		aim_line.to_local(start + line_offset),
+		aim_line.to_local(end + line_offset)
 	)
 
 

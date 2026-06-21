@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank_game/tank_game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="2_terrain"]
 [ext_resource type="PackedScene" path="res://scenes/ui/lobby_start_screen.tscn" id="3_lobby"]
 [ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="4_tank"]
+[ext_resource type="Script" path="res://scenes/camera/tank_camera_controller.gd" id="5_camera_controller"]
 
 [node name="TankGame" type="Node"]
 script = ExtResource("1_game")
@@ -27,12 +28,17 @@ transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0
 light_energy = 2.0
 
 [node name="Cameras" type="Node3D" parent="."]
+script = ExtResource("5_camera_controller")
+target_path = NodePath("../World/Tanks/PreviewTank")
+camera_path = NodePath("GameCamera")
+max_orthographic_size = 44.0
 
 [node name="GameCamera" type="Camera3D" parent="Cameras"]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 24, 24)
+position = Vector3(0, 18, 22)
+rotation = Vector3(-0.80285144, 0, 0)
 current = true
 projection = 1
-size = 28.0
+size = 20.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 

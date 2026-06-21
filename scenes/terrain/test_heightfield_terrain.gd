@@ -5,10 +5,10 @@ extends StaticBody3D
 @export_range(4, 96, 1) var subdivisions: int = 32
 @export var height_scale: float = 1.4
 @export var material: Material
-@export var low_color: Color = Color(0.11, 0.24, 0.15, 1.0)
-@export var mid_color: Color = Color(0.22, 0.46, 0.2, 1.0)
-@export var high_color: Color = Color(0.55, 0.48, 0.31, 1.0)
-@export var steep_color: Color = Color(0.42, 0.38, 0.34, 1.0)
+@export var low_color: Color = Color(0.12, 0.19, 0.28, 1.0)
+@export var mid_color: Color = Color(0.32, 0.39, 0.22, 1.0)
+@export var high_color: Color = Color(0.68, 0.57, 0.34, 1.0)
+@export var steep_color: Color = Color(0.46, 0.43, 0.4, 1.0)
 
 @onready var mesh_instance: MeshInstance3D = %MeshInstance3D
 @onready var collision_shape: CollisionShape3D = %CollisionShape3D

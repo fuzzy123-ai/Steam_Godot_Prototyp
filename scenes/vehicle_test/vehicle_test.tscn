@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="1_tank"]
 [ext_resource type="PackedScene" path="res://scenes/target_dummy/target_dummy.tscn" id="2_target_dummy"]
-[ext_resource type="PackedScene" path="res://scenes/terrain/test_heightfield_terrain.tscn" id="3_test_terrain"]
+[ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="3_test_terrain"]
+[ext_resource type="Script" path="res://scenes/camera/tank_camera_controller.gd" id="4_camera_controller"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blocker"]
 albedo_color = Color(0.36, 0.32, 0.3, 1)
@@ -47,12 +48,18 @@ position = Vector3(5, 0, -12)
 [node name="Projectiles" type="Node3D" parent="."]
 
 [node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_camera_controller")
+target_path = NodePath("../Tanks/PlayerTank")
+min_orthographic_size = 10.0
+max_orthographic_size = 34.0
+zoom_step = 2.0
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
-transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 16, 24)
+position = Vector3(0, 14, 16)
+rotation = Vector3(-0.80285144, 0, 0)
 current = true
 projection = 1
-size = 22.0
+size = 16.0
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
