@@ -1,5 +1,17 @@
 @echo off
 setlocal
-cd /d "%~dp0"
-if not exist "%~dp0..\..\runtime_logs" mkdir "%~dp0..\..\runtime_logs"
-"%~dp0..\..\tools\godot-4.7\Godot_v4.7-stable_win64.exe" --log-file "%~dp0..\..\runtime_logs\steam-cursor-mvp.log" --path "%~dp0"
+set "PROJECT_DIR=%~dp0"
+set "WORKSPACE_ROOT=%PROJECT_DIR%..\..\"
+set "GODOT_EXE=%WORKSPACE_ROOT%tools\godot-4.7\Godot_v4.7-stable_win64.exe"
+if defined GODOT_47_EXE set "GODOT_EXE=%GODOT_47_EXE%"
+if not exist "%GODOT_EXE%" if exist "%PROJECT_DIR%tools\godot-4.7\Godot_v4.7-stable_win64.exe" set "GODOT_EXE=%PROJECT_DIR%tools\godot-4.7\Godot_v4.7-stable_win64.exe"
+if not exist "%GODOT_EXE%" if exist "%PROJECT_DIR%..\tools\godot-4.7\Godot_v4.7-stable_win64.exe" set "GODOT_EXE=%PROJECT_DIR%..\tools\godot-4.7\Godot_v4.7-stable_win64.exe"
+if not exist "%GODOT_EXE%" (
+	echo Could not find Godot 4.7.
+	echo Expected: %WORKSPACE_ROOT%tools\godot-4.7\Godot_v4.7-stable_win64.exe
+	echo Or set GODOT_47_EXE to the full Godot executable path.
+	exit /b 1
+)
+cd /d "%PROJECT_DIR%"
+if not exist "%WORKSPACE_ROOT%runtime_logs" mkdir "%WORKSPACE_ROOT%runtime_logs"
+"%GODOT_EXE%" --log-file "%WORKSPACE_ROOT%runtime_logs\steam-cursor-mvp.log" --path "%PROJECT_DIR%"
