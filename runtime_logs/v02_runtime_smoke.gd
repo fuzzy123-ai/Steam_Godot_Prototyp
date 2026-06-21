@@ -30,6 +30,7 @@ func _run() -> void:
 
 	var terrain := game.get_node("World/Terrain")
 	var tank := game.get_node("World/Tanks/PreviewTank")
+	var debug_menu := game.get_node("UI/DebugMenu")
 	var definition: Resource = tank.get("vehicle_definition")
 	var terrain_fingerprint_before := str(terrain.call("get_generation_fingerprint"))
 	print("STEP visible world=", game.get_node("World").visible, " hud=", game.get_node("UI/MatchHud").visible)
@@ -37,6 +38,18 @@ func _run() -> void:
 	print("STEP tank=", definition.get("vehicle_id") if definition != null else "none")
 	print("STEP ammo=", tank.get("current_ammo"), "/", tank.get("ammo_capacity"))
 	print("STEP hp=", tank.get("health"), "/", tank.get("max_health"))
+	if debug_menu == null or not debug_menu.has_method("toggle_debug"):
+		print("FAIL debug menu missing")
+		quit(1)
+		return
+	debug_menu.call("toggle_debug")
+	await process_frame
+	print("STEP debug menu visible=", debug_menu.visible)
+	if not debug_menu.visible:
+		print("FAIL debug menu toggle")
+		quit(1)
+		return
+	debug_menu.call("toggle_debug")
 
 	if not terrain.has_method("apply_crater") or not terrain.has_method("get_height_at") or not terrain.has_method("get_generation_fingerprint"):
 		print("FAIL terrain deformation API missing; HANDOFF Charlie: wire apply_crater/get_height_at/get_generation_fingerprint on World/Terrain")

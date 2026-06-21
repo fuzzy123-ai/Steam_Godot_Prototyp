@@ -4,6 +4,7 @@ extends Node
 @onready var lobby_start_screen: Control = %LobbyStartScreen
 @onready var match_status_label: Label = %MatchStatusLabel
 @onready var match_hud: Control = %MatchHud
+@onready var debug_menu: Control = %DebugMenu
 @onready var preview_tank: Node3D = %PreviewTank
 @onready var terrain: Node3D = %Terrain
 @onready var capture_points: Node3D = %CapturePoints
@@ -37,6 +38,15 @@ func _on_start_match_requested(match_setup: Dictionary = {}) -> void:
 		_start_match.rpc(match_setup)
 	else:
 		_start_match(match_setup)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo and key_event.physical_keycode == KEY_F1:
+			if debug_menu != null and debug_menu.has_method("toggle_debug"):
+				debug_menu.call("toggle_debug")
+				get_viewport().set_input_as_handled()
 
 
 @rpc("authority", "reliable")
