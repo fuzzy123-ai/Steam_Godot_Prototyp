@@ -1,0 +1,314 @@
+{
+  "roadmap_id": "tank_mp_feature_roadmap",
+  "format_version": "1.0.0",
+  "project": {
+    "name": "Steam Godot Tank Multiplayer Prototype",
+    "engine": "Godot 4.7",
+    "perspective": "3D / 2.5D top-down tactical tank game",
+    "networking_target": "Steam P2P with host-authoritative gameplay"
+  },
+  "principles": [
+    "Prefer node-, scene-, resource-, project-setting-, and inspector-based implementation.",
+    "Use code only for behavior, physics queries, terrain runtime interaction, combat rules, and networking.",
+    "Keep version 0.1 focused on one playable tank type and one reliable local gameplay loop.",
+    "Represent tunable gameplay data as Godot Resources so future vehicles can share the same foundation.",
+    "Separate MVP requirements from post-MVP systems so experimental features do not weaken the first playable prototype."
+  ],
+  "version_0_1_mvp": {
+    "goal": "One playable basic tank can drive on terrain, aim, shoot, hit targets, and react correctly to terrain, collision, and line of sight.",
+    "scope_rule": "Only one tank type is required. No drones, no spider tanks, no armor deflection, no loadout system, no full multiplayer combat yet.",
+    "must_have": [
+      {
+        "id": "v01_vehicle_stats_resource",
+        "title": "Vehicle Stats Resource",
+        "status": "planned",
+        "description": "Create a reusable Godot Resource for tank stats instead of hardcoding movement, health, turret, and terrain values in scripts.",
+        "node_first_notes": [
+          "Assign the stats resource on the Tank scene through the inspector.",
+          "Expose materials, masks, speeds, health, and slope values as exported properties or resources."
+        ],
+        "stats_schema": {
+          "vehicle_name": "Basic Tank",
+          "max_forward_speed": 10.0,
+          "max_reverse_speed": 5.0,
+          "track_turn_speed": 1.8,
+          "acceleration": 18.0,
+          "brake_strength": 20.0,
+          "turret_turn_speed": 8.0,
+          "health": 100.0,
+          "mass": 20.0,
+          "slope_start_angle_degrees": 8.0,
+          "max_climb_angle_degrees": 35.0,
+          "min_slope_speed_factor": 0.35,
+          "slope_slowdown_strength": 0.65,
+          "shot_damage": 35.0,
+          "shot_speed": 42.0,
+          "fire_cooldown_seconds": 0.8
+        },
+        "acceptance": [
+          "Tank scene has an assigned stats resource.",
+          "Movement, turret, health, and weapon values are read from stats.",
+          "A designer can tune the basic tank without editing GDScript."
+        ]
+      },
+      {
+        "id": "v01_vehicle_test_scene",
+        "title": "Local Vehicle Test Scene",
+        "status": "planned",
+        "description": "Create a direct-launch local test scene with terrain, slopes, obstacles, one player tank, projectile targets, and camera.",
+        "acceptance": [
+          "Scene can be launched without Steam lobby.",
+          "Scene contains at least one clear line-of-sight target and one blocked line-of-sight case.",
+          "Scene contains flat ground and at least one meaningful slope or terrain height change."
+        ]
+      },
+      {
+        "id": "v01_terrain_sampling",
+        "title": "Terrain Sampling And Ground Contact",
+        "status": "planned",
+        "description": "Sample terrain height and normals under the vehicle so driving, slope slowdown, and visual alignment can use the actual terrain surface.",
+        "implementation_notes": [
+          "Start with a small set of sample points under the tank: center, front, rear, left, and right.",
+          "Use TerrainWorld as the abstraction point so placeholder terrain and Terrain3D can share the same tank-facing API.",
+          "Keep the tank collision stable before adding visual pitch/roll polish."
+        ],
+        "acceptance": [
+          "Tank does not fall through terrain.",
+          "Tank does not jitter badly on flat ground.",
+          "Terrain normal is available to the movement code.",
+          "The implementation can later read Terrain3D heights without changing tank gameplay code."
+        ]
+      },
+      {
+        "id": "v01_slope_slowdown",
+        "title": "Slope Slowdown",
+        "status": "planned",
+        "description": "Calculate a speed factor from the slope under the vehicle. Steeper terrain slows the basic tank more strongly.",
+        "formula": {
+          "slope_angle": "angle_between(terrain_normal, Vector3.UP)",
+          "normalized_slope": "smoothstep(slope_start_angle, max_climb_angle, slope_angle)",
+          "speed_factor": "lerp(1.0, min_slope_speed_factor, normalized_slope * slope_slowdown_strength)"
+        },
+        "future_reuse": [
+          "Spider tanks can use a lower slope_slowdown_strength.",
+          "Spider tanks can use a higher max_climb_angle_degrees.",
+          "Fast wheeled or light tracked vehicles can have higher top speed but stronger slope penalties."
+        ],
+        "acceptance": [
+          "Basic tank noticeably slows on steep terrain.",
+          "Basic tank keeps full or near-full speed on flat terrain.",
+          "Slope parameters are tunable from the stats resource."
+        ]
+      },
+      {
+        "id": "v01_tank_controls",
+        "title": "Tank Track Controls",
+        "status": "partial",
+        "description": "Use WASD as differential track control for the basic tank.",
+        "controls": {
+          "W": "both tracks forward",
+          "S": "both tracks reverse",
+          "A": "left turn through track differential",
+          "D": "right turn through track differential"
+        },
+        "acceptance": [
+          "Tank can drive forward and reverse.",
+          "Tank can pivot and steer like a tracked vehicle.",
+          "Control feel is tunable through stats."
+        ]
+      },
+      {
+        "id": "v01_turret_aiming",
+        "title": "Mouse Turret Aiming",
+        "status": "partial",
+        "description": "Turret rotates independently from the chassis and aims at the mouse ray projected onto terrain.",
+        "acceptance": [
+          "Turret follows mouse aim independently from chassis rotation.",
+          "Muzzle position remains correct after turret rotation.",
+          "Turret turn speed can be limited by stats."
+        ]
+      },
+      {
+        "id": "v01_line_of_sight",
+        "title": "Aim Line And Obstruction Feedback",
+        "status": "partial",
+        "description": "Show a line from the muzzle to the mouse target. The line is green when uninterrupted and red when blocked by terrain or props.",
+        "acceptance": [
+          "Aim ray ignores the owning tank.",
+          "Aim ray hits terrain and obstacle collision layers.",
+          "Green line reaches the aim target when clear.",
+          "Red line stops at the obstruction point when blocked."
+        ]
+      },
+      {
+        "id": "v01_collision_layers",
+        "title": "Collision Layer Foundation",
+        "status": "planned",
+        "description": "Define and document collision layers for tank body, terrain, props, projectiles, hitboxes, and aim ray queries.",
+        "acceptance": [
+          "Tank movement collision is separate from aim ray collision where needed.",
+          "Projectile collision can detect terrain, props, and tank hitboxes.",
+          "Self-collision is ignored by own aim and own freshly spawned projectile."
+        ]
+      },
+      {
+        "id": "v01_shooting",
+        "title": "Shooting Foundation",
+        "status": "planned",
+        "description": "Fire a projectile from the muzzle using the turret direction. Version 0.1 only needs local play and one weapon.",
+        "requirements": [
+          "Projectile scene has visible mesh, collision shape, speed, lifetime, damage, and impact signal.",
+          "Tank uses fire cooldown from stats.",
+          "Projectile starts at Muzzle and travels along turret forward direction.",
+          "Projectile does not instantly hit the firing tank."
+        ],
+        "acceptance": [
+          "Left mouse fires one projectile when cooldown allows.",
+          "Projectile is visible and travels in the turret direction.",
+          "Projectile despawns on impact or lifetime timeout."
+        ]
+      },
+      {
+        "id": "v01_hit_detection",
+        "title": "Hit Detection And Damage",
+        "status": "planned",
+        "description": "Detect projectile impacts against tank hitboxes, terrain, and props. Apply simple direct damage for version 0.1.",
+        "requirements": [
+          "Basic tank has simple hitbox or collision body suitable for projectile hits.",
+          "Projectile impact reports hit position, normal, target node, and damage value.",
+          "Health is reduced on direct hit.",
+          "Impact feedback is visible enough for testing."
+        ],
+        "acceptance": [
+          "Projectile can hit a target tank or dummy target.",
+          "Hit target health changes.",
+          "Projectile impact against terrain or obstacle stops the projectile.",
+          "Hit information is structured so armor systems can be added later."
+        ]
+      },
+      {
+        "id": "v01_basic_feedback",
+        "title": "Gameplay Feedback",
+        "status": "planned",
+        "description": "Add minimal feedback for driving, aiming, shooting, and hits without polishing final VFX.",
+        "acceptance": [
+          "Aim line clearly communicates clear or blocked shot.",
+          "Shot origin and direction are readable.",
+          "Hit impact is visible.",
+          "Health or damage debug display is available in the test scene."
+        ]
+      }
+    ],
+    "explicitly_deferred": [
+      "Multiple vehicle types",
+      "Spider tanks",
+      "Drone swarms",
+      "Anti-drone weapons",
+      "Armor deflection",
+      "Directional armor",
+      "Subsystem damage",
+      "Loadouts",
+      "Terrain craters",
+      "Full multiplayer combat synchronization"
+    ],
+    "go_criteria": [
+      "Basic tank drives reliably on the test scene terrain.",
+      "Slope slowdown works and is tunable.",
+      "Turret aiming and green/red line-of-sight feedback work.",
+      "Projectile firing works from the turret muzzle.",
+      "Projectiles hit terrain, props, and a target hitbox correctly.",
+      "A hit reduces target health in local play.",
+      "Godot script checks and scene boot checks pass."
+    ]
+  },
+  "version_0_2_multiplayer_foundation": {
+    "goal": "Move the version 0.1 local tank loop into the Steam lobby match flow.",
+    "features": [
+      "Spawn one basic tank per Steam peer.",
+      "Host owns authoritative tank state.",
+      "Clients send input and aim intent.",
+      "Host validates fire requests.",
+      "Host synchronizes tank position, chassis rotation, turret rotation, shot spawn, and hit events.",
+      "Lobby remains the entry point with host, join, copy, paste, ping, map preview, and start match."
+    ]
+  },
+  "version_0_3_terrain_damage": {
+    "goal": "Add Terrain3D deformation and make movement react to changed terrain.",
+    "features": [
+      "Projectile impact can create a crater event.",
+      "Crater event changes visible terrain height.",
+      "Terrain collision refresh happens after crater changes.",
+      "Tank terrain sampling sees updated crater heights.",
+      "Host sends reliable crater events to clients.",
+      "Late joiners can replay crater event history."
+    ]
+  },
+  "version_0_4_armor_and_projectile_rules": {
+    "goal": "Introduce directional armor and deflection after basic shooting and hits are already reliable.",
+    "features": [
+      "Tank gets separate hit zones: front, side, rear, turret, tracks.",
+      "Projectile impact stores hit position, impact normal, shot direction, and target local position.",
+      "Armor stats define thickness or resistance per hit zone.",
+      "Deflection chance or penetration result is calculated from impact angle and armor zone.",
+      "Non-penetrating hits can ricochet, spark, or apply reduced damage.",
+      "Track hits can later cause mobility damage without destroying the tank."
+    ],
+    "important_note": "Do not start this before version 0.1 hit detection is deterministic and easy to debug."
+  },
+  "version_0_5_vehicle_variants": {
+    "goal": "Use the shared stats system to add meaningful vehicle variety.",
+    "features": [
+      {
+        "name": "Fast Tank",
+        "tradeoff": "Higher top speed, weaker armor, stronger slowdown on steep terrain."
+      },
+      {
+        "name": "Heavy Tank",
+        "tradeoff": "More health and armor, lower acceleration, slower turret rotation."
+      },
+      {
+        "name": "Spider Tank",
+        "tradeoff": "Lower top speed, minimal slope slowdown, higher climb angle, different movement animation later."
+      }
+    ]
+  },
+  "version_0_6_drones_and_countermeasures": {
+    "goal": "Add drone systems only after tanks, terrain, combat, and networking have stable foundations.",
+    "drone_features": [
+      "Scout drones",
+      "Drone swarms",
+      "Loitering munitions",
+      "Repair or support drones"
+    ],
+    "anti_drone_countermeasures": [
+      "Flak",
+      "Laser",
+      "Microwave pulse",
+      "Jamming",
+      "Smoke or chaff"
+    ],
+    "design_rule": "Drones and countermeasures should use modular stats and loadout resources, not special-case code."
+  },
+  "backlog_after_0_1": [
+    "Map selection in lobby",
+    "Multiple maps",
+    "Projectile types",
+    "Explosion radius damage",
+    "Repair or respawn loop",
+    "Teams",
+    "Scoreboard",
+    "Audio feedback",
+    "Final low-poly vehicle art pass",
+    "HUD polish",
+    "Replay or spectator tools"
+  ],
+  "immediate_next_steps": [
+    "Create VehicleStats resource for the basic tank.",
+    "Move current tank tuning values into the stats resource.",
+    "Create a local VehicleTest scene with terrain, obstacles, target dummy, and camera.",
+    "Implement terrain normal sampling behind TerrainWorld API.",
+    "Apply slope slowdown to tank movement.",
+    "Implement projectile firing from Muzzle.",
+    "Implement direct hit detection and basic health damage."
+  ]
+}
