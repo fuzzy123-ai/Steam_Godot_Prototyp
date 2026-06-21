@@ -8,18 +8,18 @@ class_name PlayerData
 
 var _custom_variables: Array[String]: get = _get_custom_variables # Lists the resource custom variable names
 
-static func from_dict(dict: Dictionary) -> PlayerData:
-	var player_data := PlayerData.new()
+static func from_dict(dict: Dictionary) -> Resource:
+	var player_data: Resource = load("res://scripts/player_data_resource.gd").new()
 	for key in dict:
 		player_data.set(key,dict[key])
 	return player_data
 
-static func apply_data_to_node(data: PlayerData, node: Node) -> void:
+static func apply_data_to_node(data: Resource, node: Node) -> void:
 	if not data: return
-	var id := data.multiplayer_id
+	var id: int = data.multiplayer_id
 	node.name = str(id)
 	node.set_multiplayer_authority(id)
-	if node.get("player_data") is PlayerData:
+	if node.get("player_data") is Resource:
 		node.set("player_data", data)
 
 func to_dict() -> Dictionary:
