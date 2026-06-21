@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank_game/tank_game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="2_terrain"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_menu/debug_menu.tscn" id="11_debug_menu"]
 [ext_resource type="PackedScene" path="res://demo/components/Environment.tscn" id="12_demo_environment"]
 [ext_resource type="Resource" path="res://scenes/tank/spider_mech_definition.tres" id="13_spider_definition"]
+[ext_resource type="PackedScene" path="res://scenes/ui/game_settings_menu/game_settings_menu.tscn" id="14_settings_menu"]
 
 [node name="TankGame" type="Node"]
 script = ExtResource("1_game")
@@ -67,6 +68,9 @@ projection = 1
 size = 20.0
 
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="GameSettingsMenu" parent="UI" instance=ExtResource("14_settings_menu")]
+unique_name_in_owner = true
 
 [node name="LobbyStartScreen" parent="UI" instance=ExtResource("3_lobby")]
 unique_name_in_owner = true

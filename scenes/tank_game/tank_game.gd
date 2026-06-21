@@ -5,6 +5,7 @@ extends Node
 @onready var match_status_label: Label = %MatchStatusLabel
 @onready var match_hud: Control = %MatchHud
 @onready var debug_menu: Control = %DebugMenu
+@onready var game_settings_menu: Control = %GameSettingsMenu
 @onready var preview_tank: Node3D = %PreviewTank
 @onready var terrain: Node3D = %Terrain
 @onready var capture_points: Node3D = %CapturePoints
@@ -29,6 +30,8 @@ func _ready() -> void:
 		terrain.crater_applied.connect(_on_terrain_crater_applied)
 	if preview_tank != null and preview_tank.has_signal("projectile_fired"):
 		preview_tank.connect("projectile_fired", Callable(self, "_on_tank_projectile_fired"))
+	if game_settings_menu != null and game_settings_menu.has_signal("quit_game_requested"):
+		game_settings_menu.connect("quit_game_requested", Callable(self, "_on_quit_game_requested"))
 
 
 func _on_start_match_requested(match_setup: Dictionary = {}) -> void:
@@ -49,6 +52,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if debug_menu != null and debug_menu.has_method("toggle_debug"):
 				debug_menu.call("toggle_debug")
 				get_viewport().set_input_as_handled()
+	if event.is_action_pressed("toggle_fullscreen"):
+		if game_settings_menu != null and game_settings_menu.has_method("cycle_display_mode"):
+			game_settings_menu.call("cycle_display_mode")
+			get_viewport().set_input_as_handled()
 
 
 @rpc("authority", "reliable")
@@ -248,6 +255,13 @@ func _sanitize_projectile_spawn(spawn_data: Dictionary) -> Dictionary:
 		"damage": damage,
 		"owner_peer_id": int(spawn_data.get("owner_peer_id", 1))
 	}
+
+
+func _on_quit_game_requested() -> void:
+	var online := get_node_or_null("/root/Online")
+	if online != null and online.has_method("leave_lobby"):
+		online.call("leave_lobby")
+	get_tree().quit()
 
 
 func _prepare_match_setup(match_setup: Dictionary) -> Dictionary:

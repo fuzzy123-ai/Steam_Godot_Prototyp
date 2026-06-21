@@ -1,0 +1,160 @@
+[gd_scene load_steps=3 format=3 uid="uid://du16s66efs5tt"]
+
+[ext_resource type="Script" path="res://scenes/ui/game_settings_menu/game_settings_menu.gd" id="1_settings"]
+[ext_resource type="Script" path="res://scripts/globals/DisplaySettings.gd" id="2_display_settings"]
+
+[node name="GameSettingsMenu" type="Control"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_settings")
+
+[node name="DisplaySettings" type="Node" parent="."]
+script = ExtResource("2_display_settings")
+
+[node name="SettingsButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -76.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 76.0
+grow_horizontal = 0
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 28
+text = "⚙"
+
+[node name="Overlay" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Panel" type="PanelContainer" parent="Overlay"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -220.0
+offset_right = 230.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Margin" type="MarginContainer" parent="Overlay/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Overlay/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="Overlay/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Pause"
+horizontal_alignment = 1
+
+[node name="SystemResolutionLabel" type="Label" parent="Overlay/Panel/Margin/Content"]
+layout_mode = 2
+text = "Systemaufloesung: -"
+horizontal_alignment = 1
+
+[node name="PauseActions" type="VBoxContainer" parent="Overlay/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResumeButton" type="Button" parent="Overlay/Panel/Margin/Content/PauseActions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "Fortsetzen"
+
+[node name="OptionsButton" type="Button" parent="Overlay/Panel/Margin/Content/PauseActions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "Optionen"
+
+[node name="QuitButton" type="Button" parent="Overlay/Panel/Margin/Content/PauseActions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "Spiel beenden"
+
+[node name="OptionsContainer" type="VBoxContainer" parent="Overlay/Panel/Margin/Content"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ModeRow" type="HBoxContainer" parent="Overlay/Panel/Margin/Content/OptionsContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ModeLabel" type="Label" parent="Overlay/Panel/Margin/Content/OptionsContainer/ModeRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Fenster"
+vertical_alignment = 1
+
+[node name="ModeOption" type="OptionButton" parent="Overlay/Panel/Margin/Content/OptionsContainer/ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+
+[node name="ResolutionRow" type="HBoxContainer" parent="Overlay/Panel/Margin/Content/OptionsContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ResolutionLabel" type="Label" parent="Overlay/Panel/Margin/Content/OptionsContainer/ResolutionRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Aufloesung"
+vertical_alignment = 1
+
+[node name="ResolutionOption" type="OptionButton" parent="Overlay/Panel/Margin/Content/OptionsContainer/ResolutionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+
+[node name="ApplyButton" type="Button" parent="Overlay/Panel/Margin/Content/OptionsContainer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "Anwenden"
+
+[node name="QuitConfirm" type="ConfirmationDialog" parent="."]
+title = "Spiel beenden"
+ok_button_text = "Beenden"
+cancel_button_text = "Abbrechen"
+dialog_text = "Spiel beenden?"
