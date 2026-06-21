@@ -1,6 +1,8 @@
 # What is it?
  This is a Godot project template for hosting and joining multiplayer games using Steam or local connection.
 
+Tank multiplayer prototype operator setup and test notes live in `TANK_MP_RUNBOOK.md`.
+
 #  Installation
 1. Download the repository files. If they are compressed (for example, `.zip` or `.rar`), make sure to extract the folder inside.
 2. Open Godot, and inside the projects list press **Import** and select the project folder
