@@ -1,0 +1,58 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/tank/tank.tscn" id="1_tank"]
+[ext_resource type="PackedScene" path="res://scenes/target_dummy/target_dummy.tscn" id="2_target_dummy"]
+[ext_resource type="PackedScene" path="res://scenes/terrain/test_heightfield_terrain.tscn" id="3_test_terrain"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blocker"]
+albedo_color = Color(0.36, 0.32, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_blocker"]
+size = Vector3(2.2, 2.2, 2.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_blocker"]
+size = Vector3(2.2, 2.2, 2.2)
+
+[node name="VehicleTest" type="Node3D"]
+
+[node name="Terrain" parent="." instance=ExtResource("3_test_terrain")]
+
+[node name="Obstacles" type="Node3D" parent="."]
+
+[node name="Blocker" type="StaticBody3D" parent="Obstacles"]
+position = Vector3(5, 1.1, -6)
+
+[node name="BlockerMesh" type="MeshInstance3D" parent="Obstacles/Blocker"]
+mesh = SubResource("BoxMesh_blocker")
+surface_material_override/0 = SubResource("StandardMaterial3D_blocker")
+
+[node name="BlockerCollision" type="CollisionShape3D" parent="Obstacles/Blocker"]
+shape = SubResource("BoxShape3D_blocker")
+
+[node name="Tanks" type="Node3D" parent="."]
+
+[node name="PlayerTank" parent="Tanks" instance=ExtResource("1_tank")]
+projectile_parent_path = NodePath("../../Projectiles")
+
+[node name="Targets" type="Node3D" parent="."]
+
+[node name="ClearTarget" parent="Targets" instance=ExtResource("2_target_dummy")]
+position = Vector3(0, 0, -12)
+
+[node name="BlockedTarget" parent="Targets" instance=ExtResource("2_target_dummy")]
+position = Vector3(5, 0, -12)
+
+[node name="Projectiles" type="Node3D" parent="."]
+
+[node name="CameraRig" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 20, 20)
+current = true
+projection = 1
+size = 24.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 0, 0)
+light_energy = 2.4

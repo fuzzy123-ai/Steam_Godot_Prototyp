@@ -1,8 +1,10 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank/tank_controller.gd" id="1_tank"]
+[ext_resource type="PackedScene" path="res://scenes/projectile/projectile.tscn" id="2_projectile"]
 [ext_resource type="PackedScene" path="res://assets/low_poly_tanks/tank_battle_bg.fbx" id="2_low_poly_tanks"]
 [ext_resource type="Script" path="res://scenes/tank/low_poly_tank_visual.gd" id="3_low_poly_visual"]
+[ext_resource type="Resource" path="res://scenes/tank/basic_tank_stats.tres" id="4_basic_stats"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_tank"]
 size = Vector3(1.6, 0.7, 2.2)
@@ -42,8 +44,10 @@ roughness = 0.4
 
 [node name="Tank" type="CharacterBody3D"]
 script = ExtResource("1_tank")
+stats = ExtResource("4_basic_stats")
 aim_clear_material = SubResource("StandardMaterial3D_aim_clear")
 aim_blocked_material = SubResource("StandardMaterial3D_aim_blocked")
+projectile_scene = ExtResource("2_projectile")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 position = Vector3(0, 0.35, 0)

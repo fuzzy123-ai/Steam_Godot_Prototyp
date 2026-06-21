@@ -14,6 +14,15 @@ The basic target flow is:
 
 Current note: the existing cursor MVP already proves the Steam lobby path. The tank match screen, tank gameplay, and Terrain3D integration are still being built.
 
+## Version 0.1 Local Gameplay Gate
+
+Version 0.1 requires one basic tank that can drive, aim at a mouse target, show a muzzle-to-target line trace, shoot, hit a target, and apply simple health damage.
+
+- The aim trace is green when the muzzle has a clear path to the mouse target.
+- The aim trace is red and stops at terrain or prop obstruction.
+- Turret and gun aim are arcade-flat for 0.1: terrain slope affects driving and line blocking, not barrel elevation or ballistics.
+- Armor deflection, directional hit zones, structured hit events, polished hit VFX, drones, spider tanks, and countermeasures are post-0.1 only.
+
 ## Requirements
 
 - Godot 4.7.
@@ -84,7 +93,7 @@ For the first tank gate, entering an empty or placeholder match world is accepta
 Go:
 
 - Basic lobby and start flow works on two machines.
-- Tank local loop works.
+- Tank local loop works: mouse targeting, green/red muzzle trace, shooting, direct hits, and simple health damage.
 - Steam multiplayer match starts.
 - Craters and damage synchronize across two peers.
 

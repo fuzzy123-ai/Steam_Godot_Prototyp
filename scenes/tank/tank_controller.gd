@@ -1,14 +1,16 @@
 extends CharacterBody3D
 
-@export var forward_speed: float = 8.0
-@export var reverse_speed: float = 4.0
-@export var track_turn_speed: float = 1.8
-@export var health: float = 100.0
+const VehicleStatsScript := preload("res://scenes/tank/vehicle_stats.gd")
+
+@export var stats: Resource
 @export var aim_line_width: float = 0.08
 @export var aim_line_height: float = 0.08
+@export var aim_target_tolerance: float = 0.35
 @export_flags_3d_physics var aim_obstruction_mask: int = 0xFFFFFFFF
 @export var aim_clear_material: Material
 @export var aim_blocked_material: Material
+@export var projectile_scene: PackedScene
+@export var projectile_parent_path: NodePath
 
 @onready var turret_pivot: Node3D = %TurretPivot
 @onready var muzzle: Marker3D = %Muzzle
@@ -17,11 +19,21 @@ extends CharacterBody3D
 var _aim_target: Vector3
 var _has_aim_target := false
 var _aim_is_blocked := false
+var _active_stats: Resource
+var health: float = 100.0
+var _fire_cooldown_remaining := 0.0
+
+
+func _ready() -> void:
+	_active_stats = stats if stats != null else VehicleStatsScript.new()
+	health = _stat_float(&"health", 100.0)
 
 
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
+
+	_fire_cooldown_remaining = maxf(0.0, _fire_cooldown_remaining - delta)
 
 	var drive_input := Input.get_axis("tank_reverse", "tank_forward")
 	var turn_input := Input.get_axis("tank_turn_right", "tank_turn_left")
@@ -30,17 +42,19 @@ func _physics_process(delta: float) -> void:
 	var linear_input := (left_track + right_track) * 0.5
 	var angular_input := (left_track - right_track) * 0.5
 
-	rotate_y(angular_input * track_turn_speed * delta)
+	rotate_y(angular_input * _stat_float(&"track_turn_speed", 1.8) * delta)
 
-	var speed := forward_speed if linear_input >= 0.0 else reverse_speed
+	var speed: float = _stat_float(&"max_forward_speed", 8.0) if linear_input >= 0.0 else _stat_float(&"max_reverse_speed", 4.0)
 	velocity = -global_basis.z * linear_input * speed
 	move_and_slide()
 
-	_aim_turret_at_mouse()
+	_aim_turret_at_mouse(delta)
 	_update_aim_line()
+	if Input.is_action_just_pressed("tank_fire"):
+		_try_fire()
 
 
-func _aim_turret_at_mouse() -> void:
+func _aim_turret_at_mouse(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if not camera:
 		return
@@ -48,12 +62,23 @@ func _aim_turret_at_mouse() -> void:
 	var mouse_pos := get_viewport().get_mouse_position()
 	var ray_origin := camera.project_ray_origin(mouse_pos)
 	var ray_dir := camera.project_ray_normal(mouse_pos)
+	var ray_end := ray_origin + ray_dir * 1000.0
+	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end, aim_obstruction_mask, [get_rid()])
+	query.hit_from_inside = false
+	var world_hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not world_hit.is_empty():
+		_set_aim_target(world_hit["position"], delta)
+		return
+
 	var ground_plane := Plane(Vector3.UP, global_position.y)
 	var hit = ground_plane.intersects_ray(ray_origin, ray_dir)
 	if hit == null:
 		return
 
-	var target := hit as Vector3
+	_set_aim_target(hit as Vector3, delta)
+
+
+func _set_aim_target(target: Vector3, delta: float) -> void:
 	_aim_target = target
 	_has_aim_target = true
 
@@ -61,7 +86,12 @@ func _aim_turret_at_mouse() -> void:
 	to_target.y = 0.0
 	if to_target.length_squared() <= 0.001:
 		return
-	turret_pivot.look_at(turret_pivot.global_position + to_target, Vector3.UP)
+	var target_yaw := atan2(-to_target.x, -to_target.z)
+	turret_pivot.rotation.y = rotate_toward(
+		turret_pivot.rotation.y,
+		target_yaw,
+		_stat_float(&"turret_turn_speed", 8.0) * delta
+	)
 
 
 func _update_aim_line() -> void:
@@ -81,7 +111,10 @@ func _update_aim_line() -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	_aim_is_blocked = not hit.is_empty()
 	if _aim_is_blocked:
-		end = hit["position"]
+		var hit_position: Vector3 = hit["position"]
+		_aim_is_blocked = hit_position.distance_to(end) > aim_target_tolerance
+		if _aim_is_blocked:
+			end = hit_position
 
 	aim_line.show()
 	aim_line.material_override = aim_blocked_material if _aim_is_blocked else aim_clear_material
@@ -113,3 +146,45 @@ func _draw_aim_line(start: Vector3, end: Vector3) -> void:
 	mesh.surface_add_vertex(end + side)
 	mesh.surface_add_vertex(end - side)
 	mesh.surface_end()
+
+
+func _try_fire() -> void:
+	if projectile_scene == null or _fire_cooldown_remaining > 0.0:
+		return
+
+	var projectile := projectile_scene.instantiate()
+	if not projectile is Node3D:
+		projectile.queue_free()
+		return
+
+	var parent := get_node_or_null(projectile_parent_path) if not projectile_parent_path.is_empty() else null
+	if parent == null:
+		parent = get_tree().current_scene
+	if parent == null:
+		parent = get_parent()
+
+	parent.add_child(projectile)
+	var projectile_node := projectile as Node3D
+	projectile_node.global_transform = muzzle.global_transform
+	if projectile.has_method("launch"):
+		projectile.call(
+			"launch",
+			self,
+			_get_turret_forward(),
+			_stat_float(&"shot_speed", 42.0),
+			_stat_float(&"shot_damage", 35.0)
+		)
+	_fire_cooldown_remaining = _stat_float(&"fire_cooldown_seconds", 0.8)
+
+
+func _get_turret_forward() -> Vector3:
+	return -turret_pivot.global_basis.z.normalized()
+
+
+func _stat_float(property_name: StringName, fallback: float) -> float:
+	if _active_stats == null:
+		return fallback
+	var value = _active_stats.get(property_name)
+	if value == null:
+		return fallback
+	return float(value)

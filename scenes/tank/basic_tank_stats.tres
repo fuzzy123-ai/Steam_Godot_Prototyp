@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="VehicleStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/tank/vehicle_stats.gd" id="1_vehicle_stats"]
+
+[resource]
+script = ExtResource("1_vehicle_stats")
+vehicle_name = "Basic Tank"
+max_forward_speed = 8.0
+max_reverse_speed = 4.0
+track_turn_speed = 1.8
+acceleration = 18.0
+brake_strength = 20.0
+turret_turn_speed = 8.0
+health = 100.0
+mass = 20.0
+slope_start_angle_degrees = 8.0
+max_climb_angle_degrees = 35.0
+min_slope_speed_factor = 0.35
+slope_slowdown_strength = 0.65
+shot_damage = 35.0
+shot_speed = 42.0
+fire_cooldown_seconds = 0.8

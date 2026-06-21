@@ -15,8 +15,9 @@
     "Separate MVP requirements from post-MVP systems so experimental features do not weaken the first playable prototype."
   ],
   "version_0_1_mvp": {
-    "goal": "One playable basic tank can drive on terrain, aim, shoot, hit targets, and react correctly to terrain, collision, and line of sight.",
-    "scope_rule": "Only one tank type is required. No drones, no spider tanks, no armor deflection, no loadout system, no full multiplayer combat yet.",
+    "goal": "One playable basic tank can drive on terrain, aim at a mouse target, show a muzzle-to-target line trace, shoot, hit targets, and apply simple health damage.",
+    "scope_rule": "Only one tank type is required. No drones, no spider tanks, no armor deflection, no directional hit zones, no loadout system, no full multiplayer combat yet.",
+    "arcade_flat_policy": "For version 0.1, turret and gun aim stay arcade-flat: terrain slope affects driving and line blocking, not barrel elevation or ballistic arcs.",
     "must_have": [
       {
         "id": "v01_vehicle_stats_resource",
@@ -123,21 +124,23 @@
         "status": "partial",
         "description": "Turret rotates independently from the chassis and aims at the mouse ray projected onto terrain.",
         "acceptance": [
-          "Turret follows mouse aim independently from chassis rotation.",
+          "Turret follows the current mouse target independently from chassis rotation.",
           "Muzzle position remains correct after turret rotation.",
-          "Turret turn speed can be limited by stats."
+          "Turret turn speed can be limited by stats.",
+          "Gun elevation remains arcade-flat for version 0.1."
         ]
       },
       {
         "id": "v01_line_of_sight",
         "title": "Aim Line And Obstruction Feedback",
         "status": "partial",
-        "description": "Show a line from the muzzle to the mouse target. The line is green when uninterrupted and red when blocked by terrain or props.",
+        "description": "Show a line trace from the muzzle to the mouse target. The line is green when uninterrupted and red when blocked by terrain or props.",
         "acceptance": [
           "Aim ray ignores the owning tank.",
           "Aim ray hits terrain and obstacle collision layers.",
           "Green line reaches the aim target when clear.",
-          "Red line stops at the obstruction point when blocked."
+          "Red line stops at the obstruction point when blocked.",
+          "Terrain slope can block the trace but does not change barrel elevation."
         ]
       },
       {
@@ -175,7 +178,7 @@
         "description": "Detect projectile impacts against tank hitboxes, terrain, and props. Apply simple direct damage for version 0.1.",
         "requirements": [
           "Basic tank has simple hitbox or collision body suitable for projectile hits.",
-          "Projectile impact reports hit position, normal, target node, and damage value.",
+          "Projectile impact reports only the minimal hit position, normal, target node, and damage value needed for local testing.",
           "Health is reduced on direct hit.",
           "Impact feedback is visible enough for testing."
         ],
@@ -183,7 +186,7 @@
           "Projectile can hit a target tank or dummy target.",
           "Hit target health changes.",
           "Projectile impact against terrain or obstacle stops the projectile.",
-          "Hit information is structured so armor systems can be added later."
+          "Structured hit events, armor-zone payloads, and polished visual feedback are deferred until after version 0.1."
         ]
       },
       {
@@ -206,6 +209,9 @@
       "Anti-drone weapons",
       "Armor deflection",
       "Directional armor",
+      "Directional hit zones",
+      "Structured hit event system",
+      "Polished visual hit feedback",
       "Subsystem damage",
       "Loadouts",
       "Terrain craters",
@@ -244,7 +250,7 @@
     ]
   },
   "version_0_4_armor_and_projectile_rules": {
-    "goal": "Introduce directional armor and deflection after basic shooting and hits are already reliable.",
+    "goal": "Introduce directional armor, armor zones, structured hit events, and deflection after basic shooting and hits are already reliable.",
     "features": [
       "Tank gets separate hit zones: front, side, rear, turret, tracks.",
       "Projectile impact stores hit position, impact normal, shot direction, and target local position.",
@@ -253,7 +259,7 @@
       "Non-penetrating hits can ricochet, spark, or apply reduced damage.",
       "Track hits can later cause mobility damage without destroying the tank."
     ],
-    "important_note": "Do not start this before version 0.1 hit detection is deterministic and easy to debug."
+    "important_note": "Do not start this before version 0.1 direct hits and simple health damage are deterministic and easy to debug."
   },
   "version_0_5_vehicle_variants": {
     "goal": "Use the shared stats system to add meaningful vehicle variety.",

@@ -1,0 +1,183 @@
+{
+  "roadmap_id": "tank_mp_v01_abc_plan",
+  "format_version": "1.0.0",
+  "goal": "Build the local version 0.1 playable tank loop: one basic tank drives with arcade track controls, aims with mouse targeting, shows a green/red muzzle-to-target line trace, fires projectiles, registers hits, and applies simple health damage.",
+  "current_evidence": {
+    "branch": "main",
+    "remote": "fuzzy/main",
+    "project_path": "E:/Godot_With_Steam/external/vimayer-steam-local-multiplayer-lobby-template",
+    "godot": "E:/Godot_With_Steam/tools/godot-4.7/Godot_v4.7-stable_win64.exe",
+    "known_unrelated_dirty_file": "scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import",
+    "existing_foundation": [
+      "TANK_MP_FEATURE_ROADMAP.json defines 0.1 MVP and post-0.1 features.",
+      "Tank scene exists with LowPolyBody, TurretPivot, Muzzle, and AimLine.",
+      "Current tank controller has WASD track steering, mouse turret aim, and partial green/red line-of-sight feedback.",
+      "Projectile scene exists but does not yet collide, report hits, or apply damage.",
+      "Terrain3D is installed and smoke-tested, but 0.1 can use a local test scene before full Terrain3D gameplay integration."
+    ]
+  },
+  "non_goals_for_v01": [
+    "No spider tanks.",
+    "No drones or anti-drone countermeasures.",
+    "No armor deflection, ricochet, directional armor, or subsystem damage.",
+    "No crater terrain damage.",
+    "No full multiplayer combat synchronization.",
+    "No rewrite of Online.gd or Steam lobby bootstrap.",
+    "No edits to unrelated dirty files."
+  ],
+  "stop_rules": [
+    "Stop on secrets, tokens, or private IDs.",
+    "Stop on unrelated staged files.",
+    "Stop on hotfile conflicts with user or agent edits.",
+    "Stop before destructive git commands.",
+    "Stop if Godot script checks fail and the fix is outside the slice.",
+    "Stop before commit or push if branch or remote state is unclear.",
+    "Do not touch scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import."
+  ],
+  "slices": [
+    {
+      "id": "ABC0-v01-plan",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Save this ABC plan and coordinate Alice/Bob/Charlie work.",
+      "allowed_files": [
+        "TANK_MP_V01_ABC_PLAN.json"
+      ],
+      "verification": [
+        "Get-Content TANK_MP_V01_ABC_PLAN.json -Raw | ConvertFrom-Json"
+      ]
+    },
+    {
+      "id": "ABC1-v01-doc-consistency",
+      "owner": "Alice",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Update operator-facing docs and feature roadmap wording so 0.1 explicitly requires mouse targeting, green/red line trace, shooting, hits, and simple health damage, while deflection/armor zones remain post-0.1.",
+      "allowed_files": [
+        "TANK_MP_FEATURE_ROADMAP.json",
+        "TANK_MP_RUNBOOK.md"
+      ],
+      "forbidden_files": [
+        "scenes/**",
+        "scripts/**",
+        "addons/**",
+        "project.godot"
+      ],
+      "verification": [
+        "Get-Content TANK_MP_FEATURE_ROADMAP.json -Raw | ConvertFrom-Json"
+      ]
+    },
+    {
+      "id": "ABC2-v01-technical-audit",
+      "owner": "Bob",
+      "mode": "explorer",
+      "status": "done",
+      "outcome": "Read-only audit of the best implementation path for VehicleStats, target dummy, projectile hit handling, and a local vehicle test scene using current Godot project patterns.",
+      "allowed_files": [
+        "Read-only: scenes/tank/**",
+        "Read-only: scenes/projectile/**",
+        "Read-only: scenes/terrain/**",
+        "Read-only: scenes/tank_game/**",
+        "Read-only: project.godot",
+        "Read-only: TANK_MP_FEATURE_ROADMAP.json"
+      ],
+      "forbidden_files": [
+        "No file edits.",
+        "No git staging, commits, pushes, or destructive commands."
+      ],
+      "verification": [
+        "Read-only handoff with recommended exact file list, risks, and tests."
+      ]
+    },
+    {
+      "id": "ABC3-v01-stats-foundation",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Create VehicleStats resource and assign BasicTank stats through the Tank scene inspector/resource path. Move existing tank tuning values to stats while preserving current behavior.",
+      "allowed_files": [
+        "scenes/tank/tank_controller.gd",
+        "scenes/tank/tank.tscn",
+        "scenes/tank/vehicle_stats.gd",
+        "scenes/tank/basic_tank_stats.tres",
+        "scenes/tank/*.uid"
+      ],
+      "verification": [
+        "Godot --check-only res://scenes/tank/tank_controller.gd",
+        "Godot --check-only res://scenes/tank/vehicle_stats.gd",
+        "Godot run res://scenes/tank/tank.tscn --quit-after 2"
+      ]
+    },
+    {
+      "id": "ABC4-v01-local-test-scene",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Create a local VehicleTest scene with camera, light, ground, one playable tank, one target dummy, and one obstacle for blocked aim-line testing.",
+      "allowed_files": [
+        "scenes/vehicle_test/**",
+        "scenes/target_dummy/**",
+        "scenes/tank/**",
+        "scenes/projectile/**"
+      ],
+      "verification": [
+        "Godot run res://scenes/vehicle_test/vehicle_test.tscn --quit-after 3"
+      ]
+    },
+    {
+      "id": "ABC5-v01-targeting-gate",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Make the 0.1 targeting contract robust: mouse target, independent turret yaw, muzzle-origin raycast, green clear line, red blocked line, and self-ignore.",
+      "allowed_files": [
+        "scenes/tank/tank_controller.gd",
+        "scenes/tank/tank.tscn",
+        "scenes/vehicle_test/**"
+      ],
+      "verification": [
+        "Godot --check-only res://scenes/tank/tank_controller.gd",
+        "MCP runtime scene tree and node/property checks where available"
+      ]
+    },
+    {
+      "id": "ABC6-v01-shooting-and-hit",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Implement local projectile firing from Muzzle, collision-based projectile impacts, target dummy health, and simple damage event structure that can later support armor zones and deflection.",
+      "allowed_files": [
+        "scenes/tank/**",
+        "scenes/projectile/**",
+        "scenes/target_dummy/**",
+        "scenes/vehicle_test/**"
+      ],
+      "verification": [
+        "Godot --check-only touched scripts",
+        "Godot run res://scenes/vehicle_test/vehicle_test.tscn --quit-after 3",
+        "MCP runtime fire/hit smoke test if available"
+      ]
+    }
+  ],
+  "paths": {
+    "alice_path": {
+      "goal": "Docs and roadmap wording match the v0.1 arcade targeting/shooting contract.",
+      "completion": "JSON validates, docs mention 0.1 vs post-0.1 clearly, no code edits."
+    },
+    "bob_path": {
+      "goal": "Read-only technical handoff reduces implementation risk for stats/test/shooting.",
+      "completion": "Handoff lists exact files, recommended order, tests, and risks."
+    },
+    "charlie_path": {
+      "goal": "Integrate 0.1 local gameplay loop, test, commit, and push.",
+      "completion": "Focused Godot checks pass, only in-scope files staged, commit pushed to fuzzy/main."
+    }
+  },
+  "go_language": {
+    "go": "Local VehicleTest scene proves one tank can drive, aim with green/red line trace, shoot, hit a target, and reduce health.",
+    "partial": "Driving and targeting are solid, but shooting/hit damage is incomplete.",
+    "no_go": "Tank targeting, scene loading, or projectile collision cannot be made stable within the current Godot scene foundation.",
+    "deferred": "Armor deflection, hit zones, drones, spider tanks, crater damage, and multiplayer combat sync."
+  }
+}
