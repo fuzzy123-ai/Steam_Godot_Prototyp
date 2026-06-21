@@ -3,6 +3,7 @@ extends Node3D
 
 @export var terrain_path: NodePath = NodePath("Terrain3D")
 @export var preview_mesh_path: NodePath = NodePath("PreviewMesh")
+@export var preview_collision_shape_path: NodePath = NodePath("PreviewCollision/CollisionShape3D")
 @export var generation_settings: Resource
 @export var region_centers: Array[Vector3] = [
 	Vector3(-32.0, 0.0, -32.0),
@@ -24,6 +25,8 @@ extends Node3D
 @export var high_color: Color = Color(0.66, 0.56, 0.35, 1.0)
 @export var steep_color: Color = Color(0.46, 0.44, 0.40, 1.0)
 @export var preview_material: Material
+@export var build_terrain3d_collision: bool = false
+@export var build_preview_collision: bool = true
 @export var rebuild_now: bool = false:
 	set(value):
 		rebuild_now = false
@@ -32,12 +35,15 @@ extends Node3D
 
 var _terrain: Terrain3D
 var _preview_mesh: MeshInstance3D
+var _preview_collision_shape: CollisionShape3D
 var _features: Array[Dictionary] = []
+var _has_built_once := false
 
 
 func _ready() -> void:
 	_terrain = get_node_or_null(terrain_path) as Terrain3D
 	_preview_mesh = get_node_or_null(preview_mesh_path) as MeshInstance3D
+	_preview_collision_shape = get_node_or_null(preview_collision_shape_path) as CollisionShape3D
 	_apply_exported_settings()
 	_rebuild_terrain()
 
@@ -49,6 +55,8 @@ func apply_generation_settings(settings: Resource) -> void:
 
 
 func apply_seed(new_seed: int) -> void:
+	if _has_built_once and seed == new_seed:
+		return
 	seed = new_seed
 	if generation_settings != null:
 		generation_settings.seed = new_seed
@@ -106,10 +114,11 @@ func _rebuild_terrain() -> void:
 			_terrain.data.set_height(position, _height(position.x, position.z))
 
 	_terrain.data.update_maps(Terrain3DRegion.TYPE_HEIGHT, true, false)
-	if not Engine.is_editor_hint():
+	if build_terrain3d_collision and not Engine.is_editor_hint():
 		_terrain.collision.mode = Terrain3DCollision.DYNAMIC_GAME
 		_terrain.collision.build()
 	_rebuild_preview_mesh()
+	_has_built_once = true
 
 
 func _apply_exported_settings() -> void:
@@ -193,6 +202,15 @@ func _rebuild_preview_mesh() -> void:
 		mesh.surface_set_material(0, preview_material)
 		_preview_mesh.material_override = preview_material
 	_preview_mesh.mesh = mesh
+	_update_preview_collision(mesh)
+
+
+func _update_preview_collision(mesh: ArrayMesh) -> void:
+	if not build_preview_collision or _preview_collision_shape == null:
+		return
+	var shape := ConcavePolygonShape3D.new()
+	shape.data = mesh.get_faces()
+	_preview_collision_shape.shape = shape
 
 
 func _height(x: float, z: float) -> float:

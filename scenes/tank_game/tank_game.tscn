@@ -27,6 +27,7 @@ unique_name_in_owner = true
 
 [node name="PreviewTank" parent="World/Tanks" groups=["capture_unit"] instance=ExtResource("4_tank")]
 unique_name_in_owner = true
+terrain_probe_path = NodePath("../../Terrain")
 
 [node name="Projectiles" type="Node3D" parent="World"]
 

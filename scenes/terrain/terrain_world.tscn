@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/terrain/terrain_world.gd" id="1_terrain"]
 [ext_resource type="Script" path="res://scenes/terrain/terrain_generation_settings.gd" id="2_generation_settings"]
@@ -11,18 +11,6 @@ void fragment() {
 	ALBEDO = COLOR.rgb;
 	ROUGHNESS = 1.0;
 }"
-
-[sub_resource type="Terrain3DMaterial" id="Terrain3DMaterial_gameplay"]
-_shader_parameters = {
-"height_blending": true,
-"macro_variation1": Color(0.28, 0.33, 0.23, 1),
-"macro_variation2": Color(0.64, 0.55, 0.38, 1),
-"noise1_scale": 0.035,
-"noise2_scale": 0.09,
-"noise3_scale": 0.22,
-"vertex_normals_distance": 128.0
-}
-show_checkered = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_preview"]
 shader = SubResource("Shader_preview")
@@ -38,17 +26,16 @@ ridge_strength = 2.4
 noise_frequency = 0.18
 noise_strength = 0.35
 
-[node name="TerrainWorld" type="Node3D"]
+[node name="TerrainWorld" type="Node3D" groups=["terrain_probe"]]
 script = ExtResource("1_terrain")
 generation_settings = SubResource("Resource_generation_settings")
 height_scale = 2.4
 preview_material = SubResource("ShaderMaterial_preview")
 
-[node name="Terrain3D" type="Terrain3D" parent="."]
-visible = false
-material = SubResource("Terrain3DMaterial_gameplay")
-mesh_lods = 6
-top_level = true
-
 [node name="PreviewMesh" type="MeshInstance3D" parent="."]
 cast_shadow = 1
+
+[node name="PreviewCollision" type="StaticBody3D" parent="."]
+collision_layer = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PreviewCollision"]

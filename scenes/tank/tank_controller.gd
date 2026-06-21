@@ -13,7 +13,10 @@ signal reload_changed(reload_remaining: float, reload_seconds: float)
 @export var aim_line_width: float = 0.08
 @export var aim_line_height: float = 0.08
 @export var aim_target_tolerance: float = 0.35
-@export_flags_3d_physics var aim_obstruction_mask: int = 0xFFFFFFFF
+@export_flags_3d_physics var aim_obstruction_mask: int = 1
+@export var terrain_aim_blocks_line: bool = true
+@export_range(0.25, 3.0, 0.05) var terrain_aim_sample_step: float = 1.0
+@export_range(0.0, 2.0, 0.05) var terrain_aim_clearance: float = 0.2
 @export var aim_clear_material: Material
 @export var aim_blocked_material: Material
 @export var projectile_scene: PackedScene
@@ -134,6 +137,8 @@ func _update_aim_line() -> void:
 	if _aim_is_blocked:
 		var hit_position: Vector3 = hit["position"]
 		_aim_is_blocked = hit_position.distance_to(end) > aim_target_tolerance
+	if not _aim_is_blocked and _terrain_blocks_line(start + line_offset, end + line_offset):
+		_aim_is_blocked = true
 
 	aim_line.show()
 	aim_line.material_override = aim_blocked_material if _aim_is_blocked else aim_clear_material
@@ -167,6 +172,25 @@ func _draw_aim_line(start: Vector3, end: Vector3) -> void:
 	mesh.surface_end()
 
 
+func _terrain_blocks_line(start: Vector3, end: Vector3) -> bool:
+	if not terrain_aim_blocks_line or _terrain_probe == null or not _terrain_probe.has_method("get_height_at"):
+		return false
+
+	var flat_delta := Vector2(end.x - start.x, end.z - start.z)
+	var distance := flat_delta.length()
+	if distance <= terrain_aim_sample_step:
+		return false
+
+	var sample_count := maxi(1, ceili(distance / terrain_aim_sample_step))
+	for index: int in range(1, sample_count):
+		var t := float(index) / float(sample_count)
+		var sample_position := start.lerp(end, t)
+		var terrain_height := float(_terrain_probe.call("get_height_at", sample_position))
+		if terrain_height + terrain_aim_clearance > sample_position.y:
+			return true
+	return false
+
+
 func _try_fire() -> void:
 	var active_projectile_scene := _weapon_scene(&"spawned_projectile", projectile_scene)
 	if active_projectile_scene == null or _fire_cooldown_remaining > 0.0:
@@ -191,6 +215,8 @@ func _try_fire() -> void:
 	parent.add_child(projectile)
 	var projectile_node := projectile as Node3D
 	projectile_node.global_transform = muzzle.global_transform
+	if projectile.has_method("set_terrain_probe"):
+		projectile.call("set_terrain_probe", _terrain_probe)
 	if projectile.has_method("launch"):
 		projectile.call(
 			"launch",

@@ -26,12 +26,13 @@ func _on_start_match_requested(match_setup: Dictionary = {}) -> void:
 	if multiplayer.has_multiplayer_peer():
 		if not multiplayer.is_server():
 			return
+		_start_match(match_setup)
 		_start_match.rpc(match_setup)
 	else:
 		_start_match(match_setup)
 
 
-@rpc("authority", "reliable", "call_local")
+@rpc("authority", "reliable")
 func _start_match(match_setup: Dictionary = {}) -> void:
 	if match_started:
 		return
