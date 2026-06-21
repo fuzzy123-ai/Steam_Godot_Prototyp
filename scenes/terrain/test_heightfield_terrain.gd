@@ -5,6 +5,10 @@ extends StaticBody3D
 @export_range(4, 96, 1) var subdivisions: int = 32
 @export var height_scale: float = 1.4
 @export var material: Material
+@export var low_color: Color = Color(0.11, 0.24, 0.15, 1.0)
+@export var mid_color: Color = Color(0.22, 0.46, 0.2, 1.0)
+@export var high_color: Color = Color(0.55, 0.48, 0.31, 1.0)
+@export var steep_color: Color = Color(0.42, 0.38, 0.34, 1.0)
 
 @onready var mesh_instance: MeshInstance3D = %MeshInstance3D
 @onready var collision_shape: CollisionShape3D = %CollisionShape3D
@@ -77,10 +81,16 @@ func _rebuild() -> void:
 	for i: int in range(normals.size()):
 		normals[i] = normals[i].normalized()
 
+	var colors: Array[Color] = []
+	colors.resize(vertices.size())
+	for i: int in range(vertices.size()):
+		colors[i] = _terrain_color(vertices[i].y, normals[i])
+
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array(vertices)
 	arrays[Mesh.ARRAY_NORMAL] = PackedVector3Array(normals)
+	arrays[Mesh.ARRAY_COLOR] = PackedColorArray(colors)
 	arrays[Mesh.ARRAY_TEX_UV] = PackedVector2Array(uvs)
 	arrays[Mesh.ARRAY_INDEX] = PackedInt32Array(indices)
 
@@ -98,7 +108,18 @@ func _rebuild() -> void:
 
 
 func _height(x: float, z: float) -> float:
-	var ridge := exp(-pow((x + 8.0) / 4.5, 2.0)) * 1.1
-	var valley := -exp(-pow((z - 5.0) / 5.0, 2.0)) * 0.45
-	var waves := sin(x * 0.35) * cos(z * 0.24) * 0.28
-	return (ridge + valley + waves) * height_scale
+	var ridge := exp(-pow((x + 9.0) / 3.0, 2.0)) * 2.15
+	var plateau := exp(-pow((x - 7.0) / 5.5, 2.0) - pow((z + 5.0) / 7.0, 2.0)) * 1.55
+	var trench := -exp(-pow((x - 1.5) / 3.5, 2.0) - pow((z - 7.0) / 4.5, 2.0)) * 1.2
+	var basin := -exp(-pow((x + 7.0) / 5.5, 2.0) - pow((z + 11.0) / 4.0, 2.0)) * 0.85
+	var waves := sin(x * 0.45) * cos(z * 0.32) * 0.38
+	return (ridge + plateau + trench + basin + waves) * height_scale
+
+
+func _terrain_color(height: float, normal: Vector3) -> Color:
+	var height_t := clampf(inverse_lerp(-2.0 * height_scale, 3.2 * height_scale, height), 0.0, 1.0)
+	var base := low_color.lerp(mid_color, smoothstep(0.12, 0.5, height_t))
+	base = base.lerp(high_color, smoothstep(0.5, 0.95, height_t))
+
+	var slope_t := 1.0 - clampf(normal.dot(Vector3.UP), 0.0, 1.0)
+	return base.lerp(steep_color, smoothstep(0.18, 0.55, slope_t))
