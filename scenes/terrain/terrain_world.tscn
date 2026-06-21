@@ -1,7 +1,70 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scenes/terrain/terrain_world.gd" id="1_terrain"]
 [ext_resource type="Script" path="res://scenes/terrain/terrain_generation_settings.gd" id="2_generation_settings"]
+[ext_resource type="Terrain3DAssets" path="res://demo/data/assets.tres" id="3_demo_assets"]
+
+[sub_resource type="Gradient" id="Gradient_demo_noise"]
+offsets = PackedFloat32Array(0.2, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_demo"]
+noise_type = 2
+frequency = 0.03
+cellular_jitter = 3.0
+cellular_return_type = 0
+domain_warp_enabled = true
+domain_warp_type = 1
+domain_warp_amplitude = 50.0
+domain_warp_fractal_type = 2
+domain_warp_fractal_lacunarity = 1.5
+domain_warp_fractal_gain = 1.0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_demo"]
+seamless = true
+color_ramp = SubResource("Gradient_demo_noise")
+noise = SubResource("FastNoiseLite_demo")
+
+[sub_resource type="Terrain3DMaterial" id="Terrain3DMaterial_demo"]
+_shader_parameters = {
+"_mouse_layer": 2147483648,
+"auto_base_texture": 0,
+"auto_height_reduction": 0.05,
+"auto_overlay_texture": 1,
+"auto_slope": 0.45,
+"bias_distance": 512.0,
+"blend_sharpness": 0.5,
+"depth_blur": 0.0,
+"dual_scale_far": 170.0,
+"dual_scale_near": 100.0,
+"dual_scale_reduction": 0.3,
+"dual_scale_texture": 0,
+"enable_macro_variation": true,
+"enable_projection": true,
+&"flat_terrain_normals": false,
+"macro_variation1": Color(0.855, 0.8625, 0.9, 1),
+"macro_variation2": Color(0.9, 0.885, 0.81, 1),
+"macro_variation_slope": 0.333,
+"mipmap_bias": 1.0,
+"noise1_angle": 0.1,
+"noise1_offset": Vector2(0.5, 0.5),
+"noise1_scale": 0.04,
+"noise2_scale": 0.076,
+"noise_texture": SubResource("NoiseTexture2D_demo"),
+"projection_threshold": 0.87,
+"tri_scale_reduction": 0.3,
+"world_noise_fragment_normals": false,
+"world_noise_height": 34.0,
+"world_noise_lod_distance": 7500.0,
+"world_noise_max_octaves": 4,
+"world_noise_min_octaves": 2,
+"world_noise_offset": Vector3(2.17, -1.225, 1.9),
+"world_noise_region_blend": 0.33,
+"world_noise_scale": 9.85
+}
+world_background = 2
+auto_shader = true
+dual_scaling = true
 
 [sub_resource type="Shader" id="Shader_preview"]
 code = "shader_type spatial;
@@ -18,7 +81,7 @@ shader = SubResource("Shader_preview")
 [sub_resource type="Resource" id="Resource_generation_settings"]
 script = ExtResource("2_generation_settings")
 seed = 1001
-generation_radius = 30
+generation_radius = 512
 preview_subdivisions = 56
 height_scale = 2.4
 ridge_count = 5
@@ -29,14 +92,29 @@ noise_strength = 0.35
 [node name="TerrainWorld" type="Node3D" groups=["terrain_probe"]]
 script = ExtResource("1_terrain")
 generation_settings = SubResource("Resource_generation_settings")
+generation_radius = 512
 height_scale = 2.4
 preview_material = SubResource("ShaderMaterial_preview")
+use_imported_terrain3d_data = true
+rebuild_preview_mesh_enabled = false
+build_preview_collision = false
+
+[node name="Terrain3D" type="Terrain3D" parent="."]
+layers = 524289
+data_directory = "res://demo/data"
+material = SubResource("Terrain3DMaterial_demo")
+assets = ExtResource("3_demo_assets")
+collision_mask = 3
+metadata/_edit_lock_ = true
 
 [node name="PreviewMesh" type="MeshInstance3D" parent="."]
+visible = false
 layers = 524289
 cast_shadow = 1
 
 [node name="PreviewCollision" type="StaticBody3D" parent="."]
+process_mode = 4
+visible = false
 collision_layer = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PreviewCollision"]

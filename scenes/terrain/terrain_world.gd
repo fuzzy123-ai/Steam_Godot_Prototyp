@@ -27,6 +27,10 @@ signal crater_applied(event: Dictionary)
 @export var high_color: Color = Color(0.66, 0.56, 0.35, 1.0)
 @export var steep_color: Color = Color(0.46, 0.44, 0.40, 1.0)
 @export var preview_material: Material
+@export var use_imported_terrain3d_data: bool = false
+@export var rebuild_preview_mesh_enabled: bool = true
+@export var apply_craters_to_terrain3d_data: bool = true
+@export_range(0.25, 2.0, 0.25) var terrain3d_crater_step: float = 1.0
 @export var build_terrain3d_collision: bool = false
 @export var build_preview_collision: bool = true
 @export var rebuild_now: bool = false:
@@ -99,6 +103,8 @@ func get_height_at(world_position: Vector3) -> float:
 	if _terrain != null and _terrain.data != null:
 		var height := _terrain.data.get_height(world_position)
 		if not is_nan(height) and not is_inf(height):
+			if use_imported_terrain3d_data and not apply_craters_to_terrain3d_data:
+				return _apply_deformation_to_height(height, world_position.x, world_position.z)
 			return height
 	return _deformed_height(world_position.x, world_position.z)
 
@@ -129,7 +135,7 @@ func apply_crater_event(event: Dictionary, emit_event: bool = true) -> bool:
 		return false
 
 	_crater_events.append(crater_event)
-	_rebuild_preview_mesh()
+	_apply_crater_visuals(crater_event)
 	if emit_event:
 		crater_applied.emit(crater_event.duplicate(true))
 	return true
@@ -138,6 +144,8 @@ func apply_crater_event(event: Dictionary, emit_event: bool = true) -> bool:
 func apply_crater_events(events: Array, clear_existing: bool = true, emit_events: bool = false) -> int:
 	if clear_existing:
 		_crater_events.clear()
+		if use_imported_terrain3d_data:
+			_reload_imported_terrain3d_data()
 
 	var applied_count := 0
 	for raw_event: Variant in events:
@@ -147,11 +155,12 @@ func apply_crater_events(events: Array, clear_existing: bool = true, emit_events
 		if crater_event.is_empty():
 			continue
 		_crater_events.append(crater_event)
+		_apply_crater_visuals(crater_event)
 		applied_count += 1
 		if emit_events:
 			crater_applied.emit(crater_event.duplicate(true))
 
-	if clear_existing or applied_count > 0:
+	if not use_imported_terrain3d_data and (clear_existing or applied_count > 0):
 		_rebuild_preview_mesh()
 	return applied_count
 
@@ -160,7 +169,10 @@ func clear_deformations() -> void:
 	if _crater_events.is_empty():
 		return
 	_crater_events.clear()
-	_rebuild_preview_mesh()
+	if use_imported_terrain3d_data:
+		_reload_imported_terrain3d_data()
+	else:
+		_rebuild_preview_mesh()
 
 
 func _sanitize_crater_event(event: Dictionary) -> Dictionary:
@@ -181,9 +193,14 @@ func _rebuild_terrain() -> void:
 	_crater_events.clear()
 
 	if _terrain != null and _terrain.data != null:
-		_terrain.region_size = Terrain3D.SIZE_64
 		if _terrain.material != null:
 			_terrain.material.show_checkered = false
+		if use_imported_terrain3d_data:
+			_rebuild_preview_mesh()
+			_has_built_once = true
+			return
+
+		_terrain.region_size = Terrain3D.SIZE_64
 
 		for center: Vector3 in region_centers:
 			_terrain.data.add_region_blankp(center, true)
@@ -231,7 +248,7 @@ func _build_features() -> void:
 
 
 func _rebuild_preview_mesh() -> void:
-	if _preview_mesh == null:
+	if not rebuild_preview_mesh_enabled or _preview_mesh == null:
 		return
 
 	var vertices: Array[Vector3] = []
@@ -315,6 +332,11 @@ func _height(x: float, z: float) -> float:
 
 func _deformed_height(x: float, z: float) -> float:
 	var height := _height(x, z)
+	return _apply_deformation_to_height(height, x, z)
+
+
+func _apply_deformation_to_height(base_height: float, x: float, z: float) -> float:
+	var height := base_height
 	for event: Dictionary in _crater_events:
 		var center := Vector2(float(event.get("x", 0.0)), float(event.get("z", 0.0)))
 		var radius := float(event.get("radius", 0.0))
@@ -326,6 +348,49 @@ func _deformed_height(x: float, z: float) -> float:
 		var falloff := 1.0 - smoothstep(0.0, radius, distance)
 		height -= float(event.get("depth", 0.0)) * falloff
 	return height
+
+
+func _apply_crater_visuals(event: Dictionary) -> void:
+	if use_imported_terrain3d_data and apply_craters_to_terrain3d_data and _terrain != null and _terrain.data != null:
+		_apply_crater_to_terrain3d_data(event)
+		return
+	_rebuild_preview_mesh()
+
+
+func _apply_crater_to_terrain3d_data(event: Dictionary) -> void:
+	var center := Vector3(float(event.get("x", 0.0)), 0.0, float(event.get("z", 0.0)))
+	var radius := float(event.get("radius", 0.0))
+	var depth := float(event.get("depth", 0.0))
+	var step := maxf(0.25, terrain3d_crater_step)
+	var sample_radius := ceili(radius / step)
+	for x_index: int in range(-sample_radius, sample_radius + 1):
+		for z_index: int in range(-sample_radius, sample_radius + 1):
+			var offset := Vector2(float(x_index) * step, float(z_index) * step)
+			var distance := offset.length()
+			if distance > radius:
+				continue
+			var position := Vector3(center.x + offset.x, 0.0, center.z + offset.y)
+			var current_height := _terrain.data.get_height(position)
+			if is_nan(current_height) or is_inf(current_height):
+				continue
+			var falloff := 1.0 - smoothstep(0.0, radius, distance)
+			_terrain.data.set_height(position, current_height - depth * falloff)
+	_terrain.data.update_maps(Terrain3DRegion.TYPE_HEIGHT, true, false)
+	if build_terrain3d_collision and not Engine.is_editor_hint():
+		_terrain.collision.mode = Terrain3DCollision.DYNAMIC_GAME
+		_terrain.collision.build()
+
+
+func _reload_imported_terrain3d_data() -> void:
+	if _terrain == null:
+		return
+	var data_directory := _terrain.data_directory
+	if data_directory.is_empty():
+		return
+	_terrain.data_directory = ""
+	_terrain.data_directory = data_directory
+	if _terrain.data != null:
+		_terrain.data.update_maps(Terrain3DRegion.TYPE_HEIGHT, true, false)
 
 
 func _normal_from_height(position: Vector3) -> Vector3:

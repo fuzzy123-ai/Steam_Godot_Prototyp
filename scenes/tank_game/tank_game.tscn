@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank_game/tank_game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/terrain/terrain_world.tscn" id="2_terrain"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://scenes/tank/light_tank_definition.tres" id="9_light_definition"]
 [ext_resource type="Resource" path="res://scenes/tank/heavy_tank_definition.tres" id="10_heavy_definition"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_menu/debug_menu.tscn" id="11_debug_menu"]
+[ext_resource type="PackedScene" path="res://demo/components/Environment.tscn" id="12_demo_environment"]
 
 [node name="TankGame" type="Node"]
 script = ExtResource("1_game")
@@ -20,6 +21,8 @@ vehicle_definitions = Array[Resource]([ExtResource("8_basic_definition"), ExtRes
 [node name="World" type="Node3D" parent="."]
 unique_name_in_owner = true
 visible = false
+
+[node name="Environment" parent="World" instance=ExtResource("12_demo_environment")]
 
 [node name="Terrain" parent="World" instance=ExtResource("2_terrain")]
 unique_name_in_owner = true
