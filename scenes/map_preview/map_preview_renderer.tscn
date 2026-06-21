@@ -43,5 +43,6 @@ unique_name_in_owner = true
 position = Vector3(0, 90, 0)
 rotation = Vector3(-1.5707964, 0, 0)
 current = true
+cull_mask = 524288
 projection = 1
 size = 68.0

@@ -3,10 +3,12 @@ extends Control
 signal preview_ready(texture: Texture2D)
 
 const DEFAULT_PREVIEW_SEED := 1001
+const TERRAIN_CAPTURE_LAYER := 1 << 19
 
 @export var preview_seed: int = DEFAULT_PREVIEW_SEED
 @export_range(16.0, 160.0, 1.0) var camera_height: float = 90.0
 @export_range(0.0, 32.0, 0.5) var map_padding: float = 8.0
+@export var terrain_only_cull_mask: int = TERRAIN_CAPTURE_LAYER
 @export var update_when_visible: bool = true
 
 @onready var viewport: SubViewport = %PreviewViewport
@@ -50,6 +52,7 @@ func _frame_entire_map() -> void:
 	if terrain.get("generation_radius") != null:
 		radius = float(terrain.get("generation_radius"))
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.cull_mask = terrain_only_cull_mask
 	camera.size = maxf(8.0, radius * 2.0 + map_padding)
 	camera.global_position = terrain.global_position + Vector3(0.0, camera_height, 0.0)
 	camera.global_rotation_degrees = Vector3(-90.0, 0.0, 0.0)

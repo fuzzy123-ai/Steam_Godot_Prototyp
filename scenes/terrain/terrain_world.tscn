@@ -33,6 +33,7 @@ height_scale = 2.4
 preview_material = SubResource("ShaderMaterial_preview")
 
 [node name="PreviewMesh" type="MeshInstance3D" parent="."]
+layers = 524289
 cast_shadow = 1
 
 [node name="PreviewCollision" type="StaticBody3D" parent="."]
