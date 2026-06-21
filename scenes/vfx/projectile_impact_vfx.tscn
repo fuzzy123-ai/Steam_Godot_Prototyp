@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/vfx/combat_vfx.gd" id="1_combat_vfx"]
+
+[node name="ProjectileImpactVfx" type="Node3D"]
+script = ExtResource("1_combat_vfx")
+effect_kind = 1
+duration = 0.34

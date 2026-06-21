@@ -70,6 +70,26 @@ Version 0.2.2 extends the v0.2.1 crater contract into multiplayer and adds the f
 - Tank movement and targeting react automatically because tanks query the deformed terrain through `get_height_at()` and `get_normal_at()`.
 - The v0.2.1 local-only history remains valid as the foundation for the multiplayer sync contract.
 
+## Combat VFX Manual Gate
+
+This is the first visual combat-feedback test. It checks only the tank-fire VFX path: muzzle flash, projectile impact burst, and smoke or dust at the crater.
+
+- Intended asset set: the smallest local subset needed for muzzle flash, impact burst, and crater smoke/dust.
+- Candidate sources: local smoke flipbook, Tiny Swords explosion/dust sprites, or staged VFX packages listed in `TANK_MP_VFX_ABC_PLAN.md`.
+- Optional: SFX hooks may exist, but audio polish is not part of this gate.
+- Deferred: toon shader and water are follow-up tracks, not part of this VFX slice.
+
+Manual test:
+
+1. Launch the project with the workspace Godot 4.7 launcher.
+2. Start `res://scenes/tank_game/tank_game.tscn` locally.
+3. Aim one tank shot at visible terrain.
+4. Fire once.
+5. Confirm a short muzzle flash appears at the firing tank.
+6. Confirm an impact burst appears at the projectile hit point.
+7. Confirm smoke or dust appears briefly at the crater.
+8. Confirm the crater still appears once and tank gameplay remains responsive.
+
 ## Requirements
 
 - Godot 4.7.
@@ -180,6 +200,7 @@ Go:
 - v0.2.1 local crater deformation works from projectile terrain hits and stays responsive.
 - Future crater multiplayer sync has a primitive event contract: seed/settings plus ordered crater events.
 - v0.2.2 multiplayer projectile/crater sync works: host fires into terrain, client sees the projectile and matching crater, and both peers compare equal by seed plus crater event fingerprint.
+- Combat VFX works: one tank shot shows muzzle flash, impact burst, and crater smoke/dust without changing projectile or crater authority.
 
 Partial:
 
@@ -187,6 +208,7 @@ Partial:
 - Host and client can enter a placeholder match together, but gameplay sync is not ready.
 - Manual crater application works, but projectile-triggered craters or deterministic replay still need another slice.
 - Host projectile/crater events replicate, but peer fingerprint comparison or replay diagnostics need another pass.
+- Some combat VFX appears, but a missing category has a named blocker and next owner.
 
 No-Go:
 
@@ -195,6 +217,7 @@ No-Go:
 - Terrain3D cannot be installed or cannot provide usable runtime deformation/collision for the MVP.
 - Local crater rebuild freezes the editor/match or breaks tank driving, aiming, or projectile flow.
 - Client terrain diverges from the host after applying the same seed and host-authored crater events.
+- Combat VFX causes runtime errors, breaks projectile/crater flow, or creates duplicate crater authority.
 
 Deferred:
 
@@ -203,6 +226,7 @@ Deferred:
 - The smoke test confirmed runtime height changes and collision refresh calls. Player-facing tank driving on Terrain3D is still a separate gate.
 - Voxel terrain.
 - Advanced vehicle physics.
+- Toon shader and water follow after the first combat VFX gate is proven.
 - Polished UI.
 - Multiplayer crater RPC sync, late-join replay, save/load of crater history, chunk rebuild optimization, and crater VFX/audio polish.
 - Teams, scoring, respawn rules, matchmaking browser, final art, audio, replay UI, and dedicated server.

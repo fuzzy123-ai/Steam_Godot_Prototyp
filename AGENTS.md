@@ -144,3 +144,12 @@ node /path/to/server/build/cli.js runtime tree
 **Command groups**: project, scene, node, script, editor, input, runtime
 
 Always start by running `--help` to discover available commands. Use the CLI when MCP tools are not loaded or when you need to reduce context usage.
+
+## Local Lessons Learned
+
+1. **Use the console Godot binary for automated checks** - Run headless and parser checks with `E:/Godot_With_Steam/tools/godot-4.7/Godot_v4.7-stable_win64_console.exe`, not the GUI `.exe`, so stderr/stdout are visible.
+2. **Prepare the self-contained log directory before headless checks** - If `E:/Godot_With_Steam/tools/godot-4.7/editor_data/logs` is missing, create it before running `--headless` or `--check-only`; otherwise Godot can emit critical log-copy errors or crash before the actual script result is meaningful.
+3. **Do not treat generated Godot errors as harmless noise** - Any `ERROR:` or crash output produced during verification must be investigated, fixed, or explicitly reported as blocked before claiming the feature is clean.
+4. **Avoid root tree mutation during `_ready()`** - Do not call `get_tree().root.add_child()` from a node while the parent scene is still setting up children. Prefer scene-owned child nodes, autoloads set through MCP/editor, or `call_deferred()` only when the lifecycle is intentionally deferred and verified.
+5. **Do not use temporary ProjectSettings scripts unless the effect is proven** - If MCP/editor project setting tools are unavailable, avoid clever one-off scripts that may silently do nothing. Verify the saved file immediately, or keep the implementation local to the scene and document the tradeoff.
+6. **Keep generated scene text ASCII unless there is a strong reason** - Avoid Unicode button glyphs in `.tscn` files unless the project already depends on them and rendering/encoding is verified. Prefer text labels or project assets/icons.

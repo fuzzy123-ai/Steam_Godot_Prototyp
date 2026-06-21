@@ -27,6 +27,8 @@ signal projectile_fired(spawn_data: Dictionary)
 @export var terrain_snap_offset: float = 0.02
 @export var terrain_sample_forward_extent: float = 0.95
 @export var terrain_sample_side_extent: float = 0.65
+@export var muzzle_flash_enabled: bool = true
+@export var muzzle_flash_scene: PackedScene = preload("res://scenes/vfx/muzzle_flash_vfx.tscn")
 
 @onready var turret_pivot: Node3D = %TurretPivot
 @onready var muzzle: Marker3D = %Muzzle
@@ -271,6 +273,7 @@ func _try_fire() -> void:
 		var shot_speed := _weapon_float(&"projectile_speed", _stat_float(&"shot_speed", 42.0))
 		var shot_damage := _weapon_float(&"damage", _stat_float(&"shot_damage", 35.0))
 		projectile.call("launch", self, shot_direction, shot_speed, shot_damage)
+		_spawn_muzzle_flash(shot_direction)
 		projectile_fired.emit(_build_projectile_spawn_data(projectile_node, shot_direction, shot_speed, shot_damage))
 	current_ammo = maxi(0, current_ammo - 1)
 	ammo_changed.emit(current_ammo, ammo_capacity)
@@ -280,6 +283,28 @@ func _try_fire() -> void:
 
 func _get_turret_forward() -> Vector3:
 	return -turret_pivot.global_basis.z.normalized()
+
+
+func _spawn_muzzle_flash(shot_direction: Vector3) -> void:
+	if not muzzle_flash_enabled or muzzle_flash_scene == null:
+		return
+
+	var parent := get_parent()
+	if parent == null:
+		parent = get_tree().current_scene
+	if parent == null:
+		return
+
+	var vfx := muzzle_flash_scene.instantiate()
+	if not vfx is Node3D:
+		vfx.queue_free()
+		return
+
+	parent.add_child(vfx)
+	var vfx_node := vfx as Node3D
+	vfx_node.global_transform = muzzle.global_transform
+	if vfx.has_method("play"):
+		vfx.call("play", Vector3.UP, shot_direction)
 
 
 func _build_projectile_spawn_data(projectile_node: Node3D, direction: Vector3, shot_speed: float, shot_damage: float) -> Dictionary:

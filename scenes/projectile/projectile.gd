@@ -13,6 +13,9 @@ signal impacted(hit_data: Dictionary)
 @export_range(0.25, 12.0, 0.25) var crater_radius: float = 3.0
 @export_range(0.1, 6.0, 0.1) var crater_depth: float = 1.2
 @export var gameplay_effects_enabled: bool = true
+@export var impact_vfx_enabled: bool = true
+@export var impact_vfx_scene: PackedScene = preload("res://scenes/vfx/projectile_impact_vfx.tscn")
+@export var terrain_impact_vfx_scene: PackedScene = preload("res://scenes/vfx/terrain_dust_impact_vfx.tscn")
 
 var _age: float = 0.0
 var _direction := Vector3.FORWARD
@@ -72,6 +75,7 @@ func set_terrain_probe(terrain_probe: Node) -> void:
 func _handle_impact(hit: Dictionary) -> void:
 	global_position = hit["position"]
 	var target: Node = hit.get("collider")
+	_spawn_impact_vfx(hit, target)
 	var can_author_gameplay := _can_author_gameplay()
 	if gameplay_effects_enabled and crater_on_terrain_hit and can_author_gameplay and target != null and target.has_method("apply_crater"):
 		target.call("apply_crater", global_position, crater_radius, crater_depth)
@@ -95,6 +99,44 @@ func _handle_impact(hit: Dictionary) -> void:
 
 func _can_author_gameplay() -> bool:
 	return not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
+
+
+func _spawn_impact_vfx(hit: Dictionary, target: Node) -> void:
+	if not impact_vfx_enabled:
+		return
+
+	var vfx_scene := terrain_impact_vfx_scene if _is_terrain_hit_target(target) else impact_vfx_scene
+	if vfx_scene == null:
+		return
+
+	var parent := get_parent()
+	if parent == null:
+		parent = get_tree().current_scene
+	if parent == null:
+		return
+
+	var vfx := vfx_scene.instantiate()
+	if not vfx is Node3D:
+		vfx.queue_free()
+		return
+
+	parent.add_child(vfx)
+	var vfx_node := vfx as Node3D
+	var normal := Vector3.UP
+	var raw_normal: Variant = hit.get("normal", Vector3.UP)
+	if typeof(raw_normal) == TYPE_VECTOR3:
+		normal = (raw_normal as Vector3).normalized()
+		if normal.length_squared() <= 0.001:
+			normal = Vector3.UP
+	vfx_node.global_position = (hit["position"] as Vector3) + normal * 0.03
+	if vfx.has_method("play"):
+		vfx.call("play", normal, _direction)
+
+
+func _is_terrain_hit_target(target: Node) -> bool:
+	if target == null:
+		return false
+	return target == _terrain_probe or target.is_in_group("terrain_probe") or target.has_method("apply_crater")
 
 
 func _intersect_terrain(start: Vector3, end: Vector3) -> Dictionary:
