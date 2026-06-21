@@ -158,6 +158,23 @@
         "Godot run res://scenes/vehicle_test/vehicle_test.tscn --quit-after 3",
         "MCP runtime fire/hit smoke test if available"
       ]
+    },
+    {
+      "id": "ABC7-v01-terrain-slope",
+      "owner": "Charlie",
+      "mode": "worker",
+      "status": "done",
+      "outcome": "Wire the playable tank to terrain sampling so local v0.1 terrain height and normals affect tank height and speed through a slope slowdown factor.",
+      "allowed_files": [
+        "scenes/tank/tank_controller.gd",
+        "scenes/vehicle_test/vehicle_test.tscn",
+        "TANK_MP_V01_ABC_PLAN.json"
+      ],
+      "verification": [
+        "Godot --check-only res://scenes/tank/tank_controller.gd",
+        "Godot run res://scenes/vehicle_test/vehicle_test.tscn --quit-after 3",
+        "MCP runtime slope smoke: flat-ish point factor=1.000; steeper point pos=(-10,12) angle=19.09 factor=0.845"
+      ]
     }
   ],
   "paths": {

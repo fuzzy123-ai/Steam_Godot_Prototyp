@@ -34,6 +34,7 @@ shape = SubResource("BoxShape3D_blocker")
 
 [node name="PlayerTank" parent="Tanks" instance=ExtResource("1_tank")]
 projectile_parent_path = NodePath("../../Projectiles")
+terrain_probe_path = NodePath("../../Terrain")
 
 [node name="Targets" type="Node3D" parent="."]
 

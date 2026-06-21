@@ -11,6 +11,11 @@ const VehicleStatsScript := preload("res://scenes/tank/vehicle_stats.gd")
 @export var aim_blocked_material: Material
 @export var projectile_scene: PackedScene
 @export var projectile_parent_path: NodePath
+@export var terrain_probe_path: NodePath
+@export var terrain_snap_enabled: bool = true
+@export var terrain_snap_offset: float = 0.02
+@export var terrain_sample_forward_extent: float = 0.95
+@export var terrain_sample_side_extent: float = 0.65
 
 @onready var turret_pivot: Node3D = %TurretPivot
 @onready var muzzle: Marker3D = %Muzzle
@@ -22,11 +27,15 @@ var _aim_is_blocked := false
 var _active_stats: Resource
 var health: float = 100.0
 var _fire_cooldown_remaining := 0.0
+var _terrain_probe: Node
+var current_slope_angle_degrees: float = 0.0
+var current_slope_speed_factor: float = 1.0
 
 
 func _ready() -> void:
 	_active_stats = stats if stats != null else VehicleStatsScript.new()
 	health = _stat_float(&"health", 100.0)
+	_terrain_probe = get_node_or_null(terrain_probe_path) if not terrain_probe_path.is_empty() else null
 
 
 func _physics_process(delta: float) -> void:
@@ -43,9 +52,10 @@ func _physics_process(delta: float) -> void:
 	var angular_input := (left_track - right_track) * 0.5
 
 	rotate_y(angular_input * _stat_float(&"track_turn_speed", 1.8) * delta)
+	_update_terrain_sample()
 
 	var speed: float = _stat_float(&"max_forward_speed", 8.0) if linear_input >= 0.0 else _stat_float(&"max_reverse_speed", 4.0)
-	velocity = -global_basis.z * linear_input * speed
+	velocity = -global_basis.z * linear_input * speed * current_slope_speed_factor
 	move_and_slide()
 
 	_aim_turret_at_mouse(delta)
@@ -179,6 +189,51 @@ func _try_fire() -> void:
 
 func _get_turret_forward() -> Vector3:
 	return -turret_pivot.global_basis.z.normalized()
+
+
+func _update_terrain_sample() -> void:
+	if _terrain_probe == null:
+		current_slope_angle_degrees = 0.0
+		current_slope_speed_factor = 1.0
+		return
+
+	var normal := _sample_terrain_normal()
+	current_slope_angle_degrees = rad_to_deg(normal.angle_to(Vector3.UP))
+	current_slope_speed_factor = _calculate_slope_speed_factor(current_slope_angle_degrees)
+
+	if terrain_snap_enabled and _terrain_probe.has_method("get_height_at"):
+		var height := float(_terrain_probe.call("get_height_at", global_position))
+		global_position.y = height + terrain_snap_offset
+
+
+func _sample_terrain_normal() -> Vector3:
+	if not _terrain_probe.has_method("get_normal_at"):
+		return Vector3.UP
+
+	var forward := -global_basis.z.normalized()
+	var right := global_basis.x.normalized()
+	var sample_points: Array[Vector3] = [
+		global_position,
+		global_position + forward * terrain_sample_forward_extent,
+		global_position - forward * terrain_sample_forward_extent,
+		global_position + right * terrain_sample_side_extent,
+		global_position - right * terrain_sample_side_extent
+	]
+	var normal_sum := Vector3.ZERO
+	for point: Vector3 in sample_points:
+		normal_sum += (_terrain_probe.call("get_normal_at", point) as Vector3).normalized()
+	if normal_sum.length_squared() <= 0.001:
+		return Vector3.UP
+	return normal_sum.normalized()
+
+
+func _calculate_slope_speed_factor(slope_angle_degrees: float) -> float:
+	var start_angle := _stat_float(&"slope_start_angle_degrees", 8.0)
+	var max_angle := maxf(start_angle + 0.001, _stat_float(&"max_climb_angle_degrees", 35.0))
+	var slope_t := smoothstep(start_angle, max_angle, slope_angle_degrees)
+	var strength := clampf(_stat_float(&"slope_slowdown_strength", 0.65), 0.0, 1.0)
+	var min_factor := clampf(_stat_float(&"min_slope_speed_factor", 0.35), 0.05, 1.0)
+	return lerpf(1.0, min_factor, clampf(slope_t * strength, 0.0, 1.0))
 
 
 func _stat_float(property_name: StringName, fallback: float) -> float:
