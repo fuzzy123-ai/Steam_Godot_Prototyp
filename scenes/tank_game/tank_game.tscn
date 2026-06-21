@@ -61,11 +61,11 @@ camera_path = NodePath("GameCamera")
 max_orthographic_size = 44.0
 
 [node name="GameCamera" type="Camera3D" parent="Cameras"]
-position = Vector3(0, 18, 22)
-rotation = Vector3(-0.80285144, 0, 0)
+position = Vector3(0, 28, 32)
+rotation = Vector3(-1.0471976, 0, 0)
 current = true
 projection = 1
-size = 20.0
+size = 24.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 

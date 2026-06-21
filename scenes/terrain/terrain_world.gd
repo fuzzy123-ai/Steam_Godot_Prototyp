@@ -70,6 +70,20 @@ func apply_seed(new_seed: int) -> void:
 	_rebuild_terrain()
 
 
+func rebuild_terrain() -> void:
+	_rebuild_terrain()
+
+
+func apply_preview_seed(new_seed: int) -> void:
+	seed = new_seed
+	if generation_settings != null:
+		generation_settings.seed = new_seed
+	_build_features()
+	_crater_events.clear()
+	_rebuild_preview_mesh()
+	_has_built_once = true
+
+
 func get_generation_fingerprint() -> String:
 	return "%s:%s:%s:%s:%s:%s:%s:def:%s" % [
 		seed,

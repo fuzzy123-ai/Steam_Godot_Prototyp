@@ -129,9 +129,16 @@ func _apply_vehicle_visual(definition: Resource) -> void:
 
 
 func _set_default_vehicle_visuals_hidden(should_hide: bool) -> void:
-	var low_poly_body := preview_tank.get_node_or_null("LowPolyBody")
-	if low_poly_body != null:
-		low_poly_body.visible = not should_hide
+	var hidden_paths: Array[NodePath] = [
+		NodePath("LowPolyBody"),
+		NodePath("Chassis"),
+		NodePath("TurretPivot/Turret"),
+		NodePath("TurretPivot/Barrel")
+	]
+	for path: NodePath in hidden_paths:
+		var node := preview_tank.get_node_or_null(path)
+		if node is Node3D:
+			(node as Node3D).visible = not should_hide
 
 
 func _on_terrain_crater_applied(event: Dictionary) -> void:

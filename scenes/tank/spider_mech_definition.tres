@@ -11,6 +11,7 @@ script = ExtResource("4_vehicle_stats_script")
 vehicle_name = "Spider Mech"
 max_forward_speed = 7.2
 max_reverse_speed = 4.2
+movement_mode = "walker"
 track_turn_speed = 2.15
 acceleration = 18.0
 brake_strength = 20.0

@@ -64,6 +64,18 @@ func _physics_process(delta: float) -> void:
 	_fire_cooldown_remaining = maxf(0.0, _fire_cooldown_remaining - delta)
 	reload_changed.emit(_fire_cooldown_remaining, _weapon_float(&"reload_seconds", _stat_float(&"fire_cooldown_seconds", 0.8)))
 
+	if _stat_string(&"movement_mode", "tracked") == "walker":
+		_process_walker_movement(delta)
+	else:
+		_process_tracked_movement(delta)
+
+	_aim_turret_at_mouse(delta)
+	_update_aim_line()
+	if Input.is_action_just_pressed("tank_fire"):
+		_try_fire()
+
+
+func _process_tracked_movement(delta: float) -> void:
 	var drive_input := Input.get_axis("tank_reverse", "tank_forward")
 	var turn_input := Input.get_axis("tank_turn_right", "tank_turn_left")
 	var left_track := clampf(drive_input + turn_input, -1.0, 1.0)
@@ -78,10 +90,46 @@ func _physics_process(delta: float) -> void:
 	velocity = -global_basis.z * linear_input * speed * current_slope_speed_factor
 	move_and_slide()
 
-	_aim_turret_at_mouse(delta)
-	_update_aim_line()
-	if Input.is_action_just_pressed("tank_fire"):
-		_try_fire()
+
+func _process_walker_movement(delta: float) -> void:
+	var input_vector := Input.get_vector("tank_turn_left", "tank_turn_right", "tank_forward", "tank_reverse")
+	var move_direction := _camera_relative_direction(input_vector)
+	_update_terrain_sample()
+
+	var target_velocity := Vector3.ZERO
+	if move_direction.length_squared() > 0.001:
+		var speed := _stat_float(&"max_forward_speed", 7.2)
+		target_velocity = move_direction * speed * current_slope_speed_factor
+		var target_yaw := atan2(-move_direction.x, -move_direction.z)
+		rotation.y = rotate_toward(rotation.y, target_yaw, _stat_float(&"track_turn_speed", 2.2) * delta)
+
+	var acceleration := _stat_float(&"acceleration", 18.0)
+	var braking := _stat_float(&"brake_strength", 20.0)
+	var response := acceleration if target_velocity.length_squared() > 0.001 else braking
+	velocity = velocity.move_toward(target_velocity, response * delta)
+	move_and_slide()
+
+
+func _camera_relative_direction(input_vector: Vector2) -> Vector3:
+	if input_vector.length_squared() <= 0.001:
+		return Vector3.ZERO
+
+	var camera := get_viewport().get_camera_3d()
+	var forward := Vector3.FORWARD
+	var right := Vector3.RIGHT
+	if camera != null:
+		forward = -camera.global_basis.z
+		right = camera.global_basis.x
+	forward.y = 0.0
+	right.y = 0.0
+	if forward.length_squared() <= 0.001:
+		forward = Vector3.FORWARD
+	if right.length_squared() <= 0.001:
+		right = Vector3.RIGHT
+
+	forward = forward.normalized()
+	right = right.normalized()
+	return (right * input_vector.x - forward * input_vector.y).normalized()
 
 
 func _aim_turret_at_mouse(delta: float) -> void:
@@ -329,6 +377,15 @@ func _stat_float(property_name: StringName, fallback: float) -> float:
 	if value == null:
 		return fallback
 	return float(value)
+
+
+func _stat_string(property_name: StringName, fallback: String) -> String:
+	if _active_stats == null:
+		return fallback
+	var value = _active_stats.get(property_name)
+	if value == null:
+		return fallback
+	return str(value)
 
 
 func _weapon_float(property_name: StringName, fallback: float) -> float:

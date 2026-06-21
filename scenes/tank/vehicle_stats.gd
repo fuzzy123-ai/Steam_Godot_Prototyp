@@ -4,6 +4,7 @@ class_name VehicleStats
 @export var vehicle_name: String = "Basic Tank"
 @export var max_forward_speed: float = 8.0
 @export var max_reverse_speed: float = 4.0
+@export_enum("tracked", "walker") var movement_mode: String = "tracked"
 @export var track_turn_speed: float = 1.8
 @export var acceleration: float = 18.0
 @export var brake_strength: float = 20.0
