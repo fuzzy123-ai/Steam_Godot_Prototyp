@@ -1,0 +1,153 @@
+{
+  "roadmap_id": "tank_mp_terrain_deformation_abc",
+  "format_version": "1.0.0",
+  "goal": "Add a stable local terrain deformation foundation where projectile terrain impacts create deterministic craters, rebuild the visible terrain and collision, and expose the event list for future multiplayer sync.",
+  "project_context": {
+    "engine": "Godot 4.7",
+    "project_path": "E:/Godot_With_Steam/external/vimayer-steam-local-multiplayer-lobby-template",
+    "main_scene": "res://scenes/tank_game/tank_game.tscn",
+    "known_unrelated_dirty_file": "scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import",
+    "current_terrain": [
+      "TerrainWorld generates deterministic height from seed/settings.",
+      "PreviewMesh is the visible terrain.",
+      "PreviewCollision is rebuilt from the generated mesh.",
+      "Tank aiming and projectile terrain hits use TerrainWorld height sampling instead of expensive Terrain3D runtime raycasts."
+    ]
+  },
+  "scope": {
+    "must_have": [
+      "TerrainWorld stores crater events as primitive dictionaries.",
+      "TerrainWorld height calculation includes crater deformation.",
+      "apply_crater(global_position, radius, depth) updates the event list and rebuilds mesh/collision.",
+      "Projectile terrain impact calls apply_crater on the terrain probe.",
+      "Runtime smoke test verifies terrain height changes after a crater.",
+      "No Terrain3D runtime node or synchronous Terrain3D collision build is reintroduced."
+    ],
+    "should_have": [
+      "get_deformation_fingerprint() for future network validation.",
+      "clear_deformations() for match reset/testing.",
+      "Inspector-tunable crater defaults on Projectile."
+    ],
+    "explicit_non_goals": [
+      "No multiplayer RPC sync yet.",
+      "No persistent save/load of crater event history.",
+      "No partial mesh chunk rebuild optimization.",
+      "No visual particles, decals, scorch marks, or sound polish.",
+      "No overhangs, caves, voxel terrain, or Terrain3D runtime editing."
+    ]
+  },
+  "design_contract": {
+    "determinism": [
+      "Crater events must contain only primitive values: x, z, radius, depth.",
+      "Given the same seed/settings and event list, every peer can reconstruct the same terrain height.",
+      "Later multiplayer should sync only crater events, not mesh buffers."
+    ],
+    "performance": [
+      "v0.2.1 may rebuild the full preview mesh after each crater because terrain is small.",
+      "Do not use per-frame mesh physics raycasts against terrain.",
+      "Do not rebuild Terrain3D collision in the normal runtime path."
+    ],
+    "node_first": [
+      "Keep visual/collision nodes in the scene.",
+      "Expose gameplay tuning through exported inspector values.",
+      "Use code only for terrain math, event storage, and projectile impact behavior."
+    ]
+  },
+  "slices": [
+    {
+      "id": "ABC0-terrain-deformation-roadmap",
+      "owner": "Charlie",
+      "status": "completed",
+      "allowed_files": [
+        "TANK_MP_TERRAIN_DEFORMATION_ABC_PLAN.json"
+      ],
+      "goal": "Save the scoped terrain deformation plan."
+    },
+    {
+      "id": "ABC1-terrain-docs",
+      "owner": "Alice",
+      "status": "completed",
+      "allowed_files": [
+        "TANK_MP_RUNBOOK.md",
+        "TANK_MP_TERRAIN_DEFORMATION_ABC_PLAN.json"
+      ],
+      "goal": "Document the local crater workflow, future network contract, and manual test gate.",
+      "notes": [
+        "Runbook now documents v0.2.1 as local-only crater deformation.",
+        "Manual gate covers starting a match, shooting terrain, visible crater confirmation, and responsiveness checks.",
+        "Future multiplayer handoff is seed/settings plus ordered primitive crater events; network sync remains deferred."
+      ]
+    },
+    {
+      "id": "ABC2-deformation-runtime",
+      "owner": "Charlie",
+      "status": "completed",
+      "allowed_files": [
+        "scenes/terrain/terrain_world.gd",
+        "scenes/projectile/projectile.gd",
+        "scenes/projectile/projectile.tscn",
+        "runtime_logs/v02_runtime_smoke.gd"
+      ],
+      "goal": "Implement local crater events and projectile-triggered deformation."
+    },
+    {
+      "id": "ABC3-deformation-validation",
+      "owner": "Bob",
+      "status": "completed",
+      "allowed_files": [
+        "runtime_logs/v02_runtime_smoke.gd",
+        "scenes/terrain/terrain_world.gd",
+        "scenes/projectile/projectile.gd"
+      ],
+      "goal": "Review and extend validation around height delta, event fingerprint, and no freeze regressions."
+    },
+    {
+      "id": "ABC4-integration-commit",
+      "owner": "Charlie",
+      "status": "completed",
+      "allowed_files": [
+        "TANK_MP_TERRAIN_DEFORMATION_ABC_PLAN.json",
+        "TANK_MP_RUNBOOK.md",
+        "runtime_logs/v02_runtime_smoke.gd",
+        "scenes/terrain/terrain_world.gd",
+        "scenes/projectile/projectile.gd",
+        "scenes/projectile/projectile.tscn"
+      ],
+      "goal": "Run focused Godot checks, runtime smoke, live editor sanity test, stage only scope, commit, and push."
+    }
+  ],
+  "verification": {
+    "script_checks": [
+      "Godot --check-only res://scenes/terrain/terrain_world.gd",
+      "Godot --check-only res://scenes/projectile/projectile.gd",
+      "Godot --check-only res://runtime_logs/v02_runtime_smoke.gd"
+    ],
+    "runtime_smoke": [
+      "Start TankGame through runtime_logs/v02_runtime_smoke.gd.",
+      "Apply a crater at a sampled terrain point.",
+      "Assert terrain height at the crater center decreases.",
+      "Assert deformation fingerprint changes.",
+      "Fire once and verify ammo/reload still work.",
+      "Capture point progress still increases."
+    ],
+    "manual_gate": [
+      "Start TankGame in the editor.",
+      "Start match.",
+      "Fire at terrain.",
+      "Verify game stays responsive and terrain visibly changes."
+    ]
+  },
+  "stop_rules": [
+    "Do not touch scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import.",
+    "Stop on unrelated staged files.",
+    "Stop if Terrain3D runtime collision is required to make the feature work.",
+    "Stop if crater rebuild causes editor freeze or smoke timeout.",
+    "Stop on secrets, destructive Git commands, or unclear branch/remote state."
+  ],
+  "go_language": {
+    "go": "Local crater deformation works from projectile terrain hits, smoke tests pass, editor remains responsive, and the event list/fingerprint are ready for later sync.",
+    "partial": "Manual apply_crater works but projectile integration or live editor gate needs another slice.",
+    "no_go": "Terrain deformation causes freezes, breaks tank driving/aiming, or requires Terrain3D runtime collision.",
+    "deferred": "Network sync, persistence, chunk optimization, and visual polish."
+  }
+}

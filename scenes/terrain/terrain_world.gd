@@ -38,6 +38,7 @@ var _preview_mesh: MeshInstance3D
 var _preview_collision_shape: CollisionShape3D
 var _features: Array[Dictionary] = []
 var _has_built_once := false
+var _crater_events: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -64,15 +65,32 @@ func apply_seed(new_seed: int) -> void:
 
 
 func get_generation_fingerprint() -> String:
-	return "%s:%s:%s:%s:%s:%s:%s" % [
+	return "%s:%s:%s:%s:%s:%s:%s:def:%s" % [
 		seed,
 		generation_radius,
 		preview_subdivisions,
 		height_scale,
 		ridge_count,
 		ridge_strength,
-		noise_frequency
+		noise_frequency,
+		get_deformation_fingerprint()
 	]
+
+
+func get_deformation_fingerprint() -> String:
+	var parts: Array[String] = []
+	for event: Dictionary in _crater_events:
+		parts.append("%s,%s,%s,%s" % [
+			event.get("x", 0.0),
+			event.get("z", 0.0),
+			event.get("radius", 0.0),
+			event.get("depth", 0.0)
+		])
+	return "%s:%s" % [_crater_events.size(), ";".join(parts)]
+
+
+func get_crater_events() -> Array[Dictionary]:
+	return _crater_events.duplicate(true)
 
 
 func get_height_at(world_position: Vector3) -> float:
@@ -80,13 +98,10 @@ func get_height_at(world_position: Vector3) -> float:
 		var height := _terrain.data.get_height(world_position)
 		if not is_nan(height) and not is_inf(height):
 			return height
-	return _height(world_position.x, world_position.z)
+	return _deformed_height(world_position.x, world_position.z)
 
 
 func get_normal_at(world_position: Vector3) -> Vector3:
-	if _terrain == null or _terrain.data == null:
-		return Vector3.UP
-
 	var left := get_height_at(world_position + Vector3.LEFT * sample_step)
 	var right := get_height_at(world_position + Vector3.RIGHT * sample_step)
 	var back := get_height_at(world_position + Vector3.BACK * sample_step)
@@ -97,26 +112,47 @@ func get_normal_at(world_position: Vector3) -> Vector3:
 	return normal.normalized()
 
 
-func _rebuild_terrain() -> void:
-	if _terrain == null:
+func apply_crater(center: Vector3, radius: float, depth: float) -> bool:
+	if radius <= 0.0 or depth <= 0.0:
+		return false
+
+	_crater_events.append({
+		"x": snappedf(center.x, 0.001),
+		"z": snappedf(center.z, 0.001),
+		"radius": snappedf(radius, 0.001),
+		"depth": snappedf(depth, 0.001)
+	})
+	_rebuild_preview_mesh()
+	return true
+
+
+func clear_deformations() -> void:
+	if _crater_events.is_empty():
 		return
+	_crater_events.clear()
+	_rebuild_preview_mesh()
 
+
+func _rebuild_terrain() -> void:
 	_build_features()
-	_terrain.region_size = Terrain3D.SIZE_64
-	if _terrain.material != null:
-		_terrain.material.show_checkered = false
+	_crater_events.clear()
 
-	for center: Vector3 in region_centers:
-		_terrain.data.add_region_blankp(center, true)
-	for x: int in range(-generation_radius, generation_radius + 1):
-		for z: int in range(-generation_radius, generation_radius + 1):
-			var position := Vector3(float(x), 0.0, float(z))
-			_terrain.data.set_height(position, _height(position.x, position.z))
+	if _terrain != null and _terrain.data != null:
+		_terrain.region_size = Terrain3D.SIZE_64
+		if _terrain.material != null:
+			_terrain.material.show_checkered = false
 
-	_terrain.data.update_maps(Terrain3DRegion.TYPE_HEIGHT, true, false)
-	if build_terrain3d_collision and not Engine.is_editor_hint():
-		_terrain.collision.mode = Terrain3DCollision.DYNAMIC_GAME
-		_terrain.collision.build()
+		for center: Vector3 in region_centers:
+			_terrain.data.add_region_blankp(center, true)
+		for x: int in range(-generation_radius, generation_radius + 1):
+			for z: int in range(-generation_radius, generation_radius + 1):
+				var position := Vector3(float(x), 0.0, float(z))
+				_terrain.data.set_height(position, _height(position.x, position.z))
+
+		_terrain.data.update_maps(Terrain3DRegion.TYPE_HEIGHT, true, false)
+		if build_terrain3d_collision and not Engine.is_editor_hint():
+			_terrain.collision.mode = Terrain3DCollision.DYNAMIC_GAME
+			_terrain.collision.build()
 	_rebuild_preview_mesh()
 	_has_built_once = true
 
@@ -167,7 +203,7 @@ func _rebuild_preview_mesh() -> void:
 		for x_index: int in range(preview_subdivisions + 1):
 			var x := -float(generation_radius) + float(x_index) * step
 			var z := -float(generation_radius) + float(z_index) * step
-			var position := Vector3(x, _height(x, z), z)
+			var position := Vector3(x, _deformed_height(x, z), z)
 			var normal := _normal_from_height(position)
 			vertices.append(position)
 			normals.append(normal)
@@ -234,11 +270,26 @@ func _height(x: float, z: float) -> float:
 	return (feature_height + waves) * height_scale
 
 
+func _deformed_height(x: float, z: float) -> float:
+	var height := _height(x, z)
+	for event: Dictionary in _crater_events:
+		var center := Vector2(float(event.get("x", 0.0)), float(event.get("z", 0.0)))
+		var radius := float(event.get("radius", 0.0))
+		if radius <= 0.0:
+			continue
+		var distance := Vector2(x - center.x, z - center.y).length()
+		if distance > radius:
+			continue
+		var falloff := 1.0 - smoothstep(0.0, radius, distance)
+		height -= float(event.get("depth", 0.0)) * falloff
+	return height
+
+
 func _normal_from_height(position: Vector3) -> Vector3:
-	var left := _height(position.x - sample_step, position.z)
-	var right := _height(position.x + sample_step, position.z)
-	var back := _height(position.x, position.z - sample_step)
-	var forward := _height(position.x, position.z + sample_step)
+	var left := _deformed_height(position.x - sample_step, position.z)
+	var right := _deformed_height(position.x + sample_step, position.z)
+	var back := _deformed_height(position.x, position.z - sample_step)
+	var forward := _deformed_height(position.x, position.z + sample_step)
 	var normal := Vector3(left - right, sample_step * 2.0, back - forward)
 	if not normal.is_finite() or normal.length_squared() <= 0.001:
 		return Vector3.UP

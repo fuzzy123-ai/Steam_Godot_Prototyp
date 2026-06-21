@@ -9,6 +9,9 @@ signal impacted(hit_data: Dictionary)
 @export_flags_3d_physics var collision_query_mask: int = 1
 @export var terrain_hit_enabled: bool = true
 @export_range(0.0, 1.0, 0.05) var terrain_hit_clearance: float = 0.05
+@export var crater_on_terrain_hit: bool = true
+@export_range(0.25, 12.0, 0.25) var crater_radius: float = 3.0
+@export_range(0.1, 6.0, 0.1) var crater_depth: float = 1.2
 
 var _age: float = 0.0
 var _direction := Vector3.FORWARD
@@ -55,7 +58,10 @@ func launch(source: Node, direction: Vector3, launch_speed: float, damage: float
 	speed = launch_speed
 	max_damage = damage
 	if _direction.length_squared() > 0.001:
-		look_at(global_position + _direction, Vector3.UP)
+		var up_direction := Vector3.UP
+		if absf(_direction.dot(Vector3.UP)) > 0.98:
+			up_direction = Vector3.RIGHT
+		look_at(global_position + _direction, up_direction)
 
 
 func set_terrain_probe(terrain_probe: Node) -> void:
@@ -65,6 +71,8 @@ func set_terrain_probe(terrain_probe: Node) -> void:
 func _handle_impact(hit: Dictionary) -> void:
 	global_position = hit["position"]
 	var target: Node = hit.get("collider")
+	if crater_on_terrain_hit and target != null and target.has_method("apply_crater"):
+		target.call("apply_crater", global_position, crater_radius, crater_depth)
 	var hit_data := {
 		"position": hit["position"],
 		"normal": hit["normal"],

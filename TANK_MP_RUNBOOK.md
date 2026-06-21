@@ -34,6 +34,30 @@ Version 0.2 adds the first lobby-facing setup controls without implementing game
 - `Start Match` remains host-only and keeps the existing no-argument `start_match_requested` signal for compatibility.
 - The lobby script exposes `get_match_setup()` for the next integration step. It returns a Dictionary with `tank_id`, `tank_label`, `seed`, and `map_id`.
 
+## Version 0.2.1 Local Terrain Deformation Gate
+
+Version 0.2.1 is a local-only terrain deformation slice. Projectile terrain impacts create crater events, the local terrain mesh/collision are rebuilt from those events, and the crater event list becomes the primitive contract for later multiplayer sync.
+
+- Crater events are primitive data only: terrain-space `x`, `z`, `radius`, and `depth`.
+- Terrain reconstruction is deterministic from the match seed, terrain generation settings, and the ordered crater event list.
+- Peers should eventually sync crater events, not mesh buffers, image data, or Terrain3D collision state.
+- v0.2.1 does not implement multiplayer crater replication, persistence, late-join replay, visual decals, particles, scorch marks, or chunked mesh optimization.
+- Full preview mesh/collision rebuild after each crater is acceptable for this small local prototype gate.
+
+Node and Inspector preference:
+
+- Keep terrain visual/collision nodes in the scene so operators can inspect the setup.
+- Crater parameters should be exported tunables on gameplay nodes, such as projectile crater radius/depth defaults.
+- Runtime code should stay focused on terrain math, crater event logging, deterministic reconstruction, and projectile impact behavior.
+- Avoid hardcoding tuning values in scripts when an exported Inspector value is reasonable.
+
+Future multiplayer contract:
+
+- The host can author crater events after validating projectile terrain impacts.
+- Clients can apply the same ordered primitive events against the same seed/settings to reconstruct matching heights.
+- A future fingerprint can compare reconstructed event state across peers without synchronizing mesh buffers.
+- Network sync is explicitly deferred beyond v0.2.1.
+
 ## Requirements
 
 - Godot 4.7.
@@ -93,6 +117,19 @@ Run this once the lobby start screen exists for the tank prototype.
 
 For the first tank gate, entering an empty or placeholder match world is acceptable if both peers transition together.
 
+## Local Terrain Deformation Manual Gate
+
+Run this after the v0.2.1 crater slice is implemented.
+
+1. Launch the project with the workspace Godot 4.7 launcher.
+2. Start a local match from the lobby or direct tank game entry point available in the current slice.
+3. Aim at visible terrain.
+4. Fire a projectile into the terrain.
+5. Confirm a visible crater appears at the impact point.
+6. Confirm tank aiming, movement, reload/ammo flow, and capture progress remain responsive after the crater rebuild.
+7. Restart with the same seed and replay the same crater event sequence if a developer hook is available.
+8. Confirm the reconstructed terrain shape matches the same seed plus ordered crater events.
+
 ## Expected Result
 
 - Host can create a Steam lobby.
@@ -101,6 +138,8 @@ For the first tank gate, entering an empty or placeholder match world is accepta
 - Start match is host-only.
 - Host can choose a placeholder tank and numeric seed before starting.
 - Host `Start Match` reliably moves both peers into the match state.
+- Local projectile hits on terrain create visible craters without freezing the editor or match.
+- The deformation state can be described by seed/settings plus primitive crater events for future sync.
 
 ## Decision Language
 
@@ -109,18 +148,21 @@ Go:
 - Basic lobby and start flow works on two machines.
 - Tank local loop works: mouse targeting, green/red muzzle trace, shooting, direct hits, and simple health damage.
 - Steam multiplayer match starts.
-- Craters and damage synchronize across two peers.
+- v0.2.1 local crater deformation works from projectile terrain hits and stays responsive.
+- Future crater multiplayer sync has a primitive event contract: seed/settings plus ordered crater events.
 
 Partial:
 
 - Lobby and local tank/terrain loop works, but multiplayer crater sync or late join is incomplete.
 - Host and client can enter a placeholder match together, but gameplay sync is not ready.
+- Manual crater application works, but projectile-triggered craters or deterministic replay still need another slice.
 
 No-Go:
 
 - Steam lobby creation or join is broken in a way that blocks two-machine testing.
 - Host `Start Match` does not move both peers into the same match state.
 - Terrain3D cannot be installed or cannot provide usable runtime deformation/collision for the MVP.
+- Local crater rebuild freezes the editor/match or breaks tank driving, aiming, or projectile flow.
 
 Deferred:
 
@@ -130,6 +172,7 @@ Deferred:
 - Voxel terrain.
 - Advanced vehicle physics.
 - Polished UI.
+- Multiplayer crater RPC sync, late-join replay, save/load of crater history, chunk rebuild optimization, and crater VFX/audio polish.
 - Teams, scoring, respawn rules, matchmaking browser, final art, audio, replay UI, and dedicated server.
 
 ## Handoff Notes
@@ -139,3 +182,4 @@ Deferred:
 - Keep AppID `480` for prototype testing unless a real Steam app ID is explicitly assigned.
 - Do not log or persist private tokens, Steam credentials, chat IDs, or unrelated machine-specific secrets.
 - Treat the Terrain3D result as a gate: if the addon spike fails, report `No-Go` for crater terrain until an alternative is chosen.
+- For v0.2.1, keep crater deformation local. Hand off later network work as event replication of primitive crater dictionaries, not scene-node sync or mesh-buffer sync.
