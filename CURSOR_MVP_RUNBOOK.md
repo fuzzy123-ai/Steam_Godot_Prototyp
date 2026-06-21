@@ -33,7 +33,11 @@ From the project folder:
 
 `run-from-workspace-safe.cmd`
 
-The launchers write logs to `E:\Godot_With_Steam\runtime_logs`. This avoids a Godot 4.7 startup crash seen when the engine tries to write default logs under `user://logs`.
+For a standalone clone, set `GODOT_EXE` before running the launcher if Godot is not in the workspace tools folder:
+
+`set "GODOT_EXE=C:\Users\simon\Software\Godot\Godot_v4.7-stable_win64.exe"`
+
+The project launchers write logs to `runtime_logs` inside the clone. If that folder cannot be created, they fall back to `%TEMP%\Steam_Godot_Prototyp_logs`. This avoids a Godot 4.7 startup crash seen when the engine tries to write default logs under `user://logs`.
 
 Project path:
 
