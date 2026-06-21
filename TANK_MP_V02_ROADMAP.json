@@ -1,0 +1,539 @@
+{
+  "roadmap_id": "tank_mp_v02_roadmap",
+  "format_version": "1.0.0",
+  "created_for": "Version 0.2 prototype planning",
+  "goal": "Build a configurable v0.2 tank match foundation with lobby tank selection, seeded terrain generation, ammo and reload rules, health UI, and capturable map points while preserving the v0.1 arcade tank loop.",
+  "project_context": {
+    "engine": "Godot 4.7",
+    "project_path": "E:/Godot_With_Steam/external/vimayer-steam-local-multiplayer-lobby-template",
+    "main_scene": "res://scenes/tank_game/tank_game.tscn",
+    "known_unrelated_dirty_file": "scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import",
+    "latest_confirmed_commit_before_plan": "79e0bd5 Improve tank terrain visibility and camera aiming",
+    "current_foundation": [
+      "Basic tank scene exists with LowPolyBody, TurretPivot, Muzzle, AimLine, projectile spawning, terrain sampling, slope slowdown, and simple health.",
+      "VehicleStats resource exists and is assigned through the Tank scene.",
+      "TerrainWorld can generate terrain heights and exposes get_height_at/get_normal_at for tanks.",
+      "Terrain3D is installed and used as data/collision carrier, with a v0.1 preview mesh for readable visuals.",
+      "Lobby start screen already has host/join/copy/paste/start, connection status, ping display, loading overlay, and map preview placeholder.",
+      "VehicleTest scene exists for local gameplay smoke tests."
+    ]
+  },
+  "design_principles": [
+    "Prefer node-, scene-, resource-, project-setting-, and inspector-based implementation.",
+    "Use code only for runtime behavior, deterministic terrain generation, combat state, capture progress, and network authority boundaries.",
+    "Use resources for tunable gameplay data: vehicle definitions, vehicle stats, weapon stats, terrain generation settings, capture point settings, and map definitions.",
+    "Keep v0.2 playable with one local instance first, then wire lobby-selected data so multiplayer sync can use the same contracts.",
+    "Host is the future authority for selected map seed, match settings, capture progress, ammo consumption, damage, and respawn.",
+    "Avoid hardcoded vehicle/model logic in TankController; selection should swap resources/scenes through inspector-friendly definitions."
+  ],
+  "v02_scope": {
+    "must_have": [
+      "Multiple tank definitions with different model/stat/resource presets.",
+      "Tank selection UI in the lobby before Start Match.",
+      "Selected tank applied when the match starts.",
+      "Ammo count and reload speed affect firing.",
+      "Health bar UI for the local tank and readable target health feedback.",
+      "At least two capture points placed on the map, capturable by standing inside their Area3D.",
+      "Seeded terrain generation controlled from the lobby.",
+      "Map preview updates from selected seed/settings at a basic level.",
+      "Focused local tests and scene boot checks for VehicleTest and TankGame."
+    ],
+    "should_have": [
+      "Three initial vehicle definitions: Basic Tank, Light Tank, Heavy Tank.",
+      "At least one vehicle variant should visibly differ in speed, HP, reload, ammo, and slope handling.",
+      "Capture point UI should show neutral, capturing, contested, and owned states.",
+      "Lobby should show selected tank stats and selected seed before match start.",
+      "Host-only map seed editing when multiplayer peer is active."
+    ],
+    "could_have": [
+      "Simple player name labels above tanks.",
+      "Basic capture score ticker.",
+      "Per-vehicle preview mesh in the lobby map preview area.",
+      "Randomize seed button.",
+      "Copy match settings payload for debugging."
+    ],
+    "explicit_non_goals": [
+      "No armor deflection or ricochet.",
+      "No directional hit zones or subsystem damage.",
+      "No drones, spider tanks, or anti-drone countermeasures.",
+      "No full teams, scoreboard polish, respawn tickets, or match end cinematics.",
+      "No dedicated server.",
+      "No production matchmaking browser.",
+      "No final Terrain3D painting workflow; v0.2 can still use generated preview mesh visuals if Terrain3D texture assets are not configured.",
+      "No destructive terrain craters unless they fall out naturally from seeded generation work without destabilizing v0.2."
+    ]
+  },
+  "data_model": {
+    "vehicle_definition": {
+      "suggested_path": "res://scenes/tank/vehicle_definition.gd",
+      "resource_type": "Resource",
+      "purpose": "Designer-facing resource selected in the lobby and applied to spawned tanks.",
+      "fields": {
+        "vehicle_id": "StringName, stable network/save id such as basic_tank",
+        "display_name": "String, UI name",
+        "description": "String, short lobby text",
+        "tank_scene": "PackedScene, optional full scene override",
+        "visual_scene": "PackedScene, optional visual/model override if Tank scene remains shared",
+        "stats": "VehicleStats",
+        "weapon_stats": "WeaponStats",
+        "preview_color": "Color for UI swatches and map preview",
+        "sort_order": "int"
+      },
+      "acceptance": [
+        "A tank can be selected by stable vehicle_id instead of by file path.",
+        "A designer can add a new vehicle definition without editing TankGame code.",
+        "Lobby can enumerate an exported array or folder-loaded list of VehicleDefinition resources."
+      ]
+    },
+    "vehicle_stats_extensions": {
+      "suggested_path": "res://scenes/tank/vehicle_stats.gd",
+      "add_fields": [
+        "max_health",
+        "armor_rating_debug",
+        "hull_turn_acceleration",
+        "terrain_profile_id",
+        "display_weight_class"
+      ],
+      "note": "Keep combat-specific weapon fields in WeaponStats instead of overloading VehicleStats further."
+    },
+    "weapon_stats": {
+      "suggested_path": "res://scenes/tank/weapon_stats.gd",
+      "resource_type": "Resource",
+      "fields": {
+        "weapon_name": "String",
+        "damage": "float",
+        "projectile_speed": "float",
+        "reload_seconds": "float",
+        "ammo_capacity": "int",
+        "spawned_projectile": "PackedScene",
+        "can_fire_while_reloading": "bool, default false",
+        "line_of_fire_required": "bool, default false for arcade shell tests"
+      },
+      "v02_policy": [
+        "Use single-shot reload first: one shell can be fired when reload timer is complete.",
+        "Ammo capacity is total available shells for the match.",
+        "Reload starts immediately after a successful shot if ammo remains.",
+        "No magazine/clip system in v0.2 unless the single-shot system is already stable."
+      ]
+    },
+    "map_definition": {
+      "suggested_path": "res://scenes/map/map_definition.gd",
+      "resource_type": "Resource",
+      "fields": {
+        "map_id": "StringName",
+        "display_name": "String",
+        "terrain_settings": "TerrainGenerationSettings",
+        "capture_point_layout": "Array[CapturePointSpawn]",
+        "spawn_points": "Array[Transform3D]",
+        "preview_color_a": "Color",
+        "preview_color_b": "Color"
+      }
+    },
+    "terrain_generation_settings": {
+      "suggested_path": "res://scenes/terrain/terrain_generation_settings.gd",
+      "resource_type": "Resource",
+      "fields": {
+        "seed": "int",
+        "generation_radius": "int",
+        "height_scale": "float",
+        "ridge_count": "int",
+        "ridge_strength": "float",
+        "noise_frequency": "float",
+        "noise_strength": "float",
+        "capture_flatten_radius": "float",
+        "spawn_flatten_radius": "float"
+      },
+      "determinism_contract": [
+        "The same settings and seed must generate the same terrain heights on every peer.",
+        "Do not use randomize() or non-seeded RNG for generated gameplay geometry.",
+        "Lobby owns the selected seed before match start; host broadcasts selected seed/settings later in multiplayer."
+      ]
+    },
+    "capture_point_settings": {
+      "suggested_path": "res://scenes/capture_point/capture_point_settings.gd",
+      "resource_type": "Resource",
+      "fields": {
+        "capture_seconds": "float",
+        "neutralize_seconds": "float",
+        "radius": "float",
+        "score_per_second": "float",
+        "requires_stationary": "bool, default false for v0.2",
+        "contest_blocks_progress": "bool, default true"
+      }
+    }
+  },
+  "feature_tracks": [
+    {
+      "id": "V02-A-vehicle-selection",
+      "title": "Vehicle Definitions And Lobby Tank Selection",
+      "goal": "Replace the single hardcoded basic tank choice with resource-driven selectable vehicle definitions.",
+      "ordered_tasks": [
+        "Create VehicleDefinition resource class.",
+        "Create Basic, Light, and Heavy tank definition resources.",
+        "Move current Basic tank weapon values out of VehicleStats into WeaponStats or bridge fields with backwards compatibility.",
+        "Add an inspector-configured vehicle_definitions array to LobbyStartScreen or TankGame.",
+        "Add lobby selection UI using OptionButton or ItemList, plus compact stat preview.",
+        "Store selected vehicle_id for the local player.",
+        "On Start Match, apply selected definition to PreviewTank or spawned player tank.",
+        "Keep default Basic Tank selected if no valid selection exists."
+      ],
+      "initial_vehicle_targets": [
+        {
+          "vehicle_id": "basic_tank",
+          "role": "Balanced",
+          "stats_intent": "Baseline speed, baseline health, baseline reload, moderate slope slowdown."
+        },
+        {
+          "vehicle_id": "light_tank",
+          "role": "Fast scout",
+          "stats_intent": "Higher speed and turret turn, lower health, lower damage or lower ammo, stronger slope penalty."
+        },
+        {
+          "vehicle_id": "heavy_tank",
+          "role": "Slow brawler",
+          "stats_intent": "Higher health and damage, slower movement/turret, longer reload, weaker slope speed but more durability."
+        }
+      ],
+      "acceptance": [
+        "Lobby shows at least three selectable tank definitions.",
+        "Each selection shows HP, speed, reload, ammo, and damage.",
+        "Starting match applies selected stats to the playable tank.",
+        "No tank controller code contains per-vehicle if/else branches for the three vehicle types."
+      ]
+    },
+    {
+      "id": "V02-B-ammo-reload",
+      "title": "Ammo And Reload Loop",
+      "goal": "Make firing depend on ammo and reload timing with clear HUD feedback.",
+      "ordered_tasks": [
+        "Create WeaponStats resource class and presets.",
+        "Add exported weapon_stats to TankController or VehicleDefinition.",
+        "Track current_ammo, reload_remaining, and can_fire state in TankController.",
+        "Block firing while reload_remaining > 0 or current_ammo <= 0.",
+        "Emit ammo_changed and reload_changed signals from TankController.",
+        "Update projectile launch to read damage/speed/projectile_scene from WeaponStats.",
+        "Add simple click feedback/status when empty or reloading.",
+        "Add reload progress display to HUD."
+      ],
+      "acceptance": [
+        "Firing reduces ammo by one.",
+        "Reload timer prevents immediate repeat firing.",
+        "Reload speed differs between vehicle definitions.",
+        "Ammo count and reload progress are visible in the match HUD.",
+        "Script checks pass and local firing smoke test confirms cooldown/ammo behavior."
+      ]
+    },
+    {
+      "id": "V02-C-health-ui",
+      "title": "Health Bars And Combat Feedback",
+      "goal": "Expose tank health changes through signals and show readable HP bars.",
+      "ordered_tasks": [
+        "Add max_health/current_health naming to TankController while preserving existing health behavior.",
+        "Emit health_changed(current, max) after setup and damage.",
+        "Create MatchHud scene with HP ProgressBar, ammo label, reload bar, selected tank label, and capture status label.",
+        "Attach MatchHud under TankGame UI CanvasLayer.",
+        "Bind local tank signals to MatchHud when match starts.",
+        "Optionally add simple floating HP bar for target dummy or enemy tank testing.",
+        "Update target dummy to expose health_changed signal or compatible API."
+      ],
+      "acceptance": [
+        "Local player HP bar appears after Start Match.",
+        "HP bar changes when damage is applied.",
+        "Ammo and reload UI update without polling fragile node paths.",
+        "UI remains usable at 1280x720 and does not cover lobby controls before match start."
+      ]
+    },
+    {
+      "id": "V02-D-capture-points",
+      "title": "Capture Points",
+      "goal": "Add map objectives that can be captured by standing inside Area3D zones.",
+      "ordered_tasks": [
+        "Create CapturePointSettings resource.",
+        "Create CapturePoint scene with Area3D, CollisionShape3D, MeshInstance3D ring/marker, label/progress display, and script.",
+        "Detect tank bodies entering/exiting via group or exported accepted_body_group.",
+        "Track occupants by side/team placeholder: neutral/player/enemy for local v0.2.",
+        "Increase capture progress while one side occupies and no contesting side is present.",
+        "Neutralize owned point before switching owner if needed.",
+        "Emit owner_changed and progress_changed signals.",
+        "Place at least two capture points in VehicleTest and TankGame world.",
+        "Show capture point state in MatchHud."
+      ],
+      "v02_capture_rules": {
+        "teams": "Use placeholder sides for now: local_player, opponent, neutral.",
+        "capture": "Standing in the point fills progress over capture_seconds.",
+        "contest": "Multiple opposing sides inside the point pauses progress.",
+        "ownership": "When progress reaches 1.0, owner changes and progress stays full.",
+        "score": "Score ticker can be debug-only in v0.2."
+      },
+      "acceptance": [
+        "Driving into a neutral capture point starts progress.",
+        "Leaving the point stops progress.",
+        "Progress reaches captured state after configured seconds.",
+        "Visual marker changes color/state when neutral, capturing, contested, or owned.",
+        "Capture point settings are tunable in the inspector."
+      ]
+    },
+    {
+      "id": "V02-E-seeded-terrain",
+      "title": "Seeded Dynamic Terrain Generation",
+      "goal": "Make terrain generation configurable from lobby seed/settings and deterministic enough for multiplayer later.",
+      "ordered_tasks": [
+        "Create TerrainGenerationSettings resource.",
+        "Refactor TerrainWorld hardcoded _height formula to consume settings and seed.",
+        "Use RandomNumberGenerator with explicit seed for ridge/feature placement.",
+        "Keep generated terrain readable with current preview mesh and Terrain3D collision data.",
+        "Add apply_generation_settings(settings) to TerrainWorld.",
+        "Add get_generation_fingerprint() for debug display and future network validation.",
+        "Add lobby Seed LineEdit/SpinBox and Randomize Seed button.",
+        "Add host-only editing rules when connected to multiplayer.",
+        "Send selected seed/settings from LobbyStartScreen to TankGame on Start Match.",
+        "Regenerate TerrainWorld before match begins.",
+        "Update map preview placeholder with seed text and basic terrain color/thumbnail cue."
+      ],
+      "acceptance": [
+        "Entering the same seed generates the same terrain shape after Start Match.",
+        "Different seeds visibly change terrain layout.",
+        "Terrain heights, preview mesh, and Terrain3D collision are rebuilt together.",
+        "Tank slope sampling still works after regeneration.",
+        "Lobby displays selected seed and match world displays the same seed/fingerprint."
+      ]
+    },
+    {
+      "id": "V02-F-match-flow-integration",
+      "title": "Match Flow Integration",
+      "goal": "Bundle selected tank, selected seed, terrain settings, and objective setup into one match start payload.",
+      "ordered_tasks": [
+        "Create MatchSetup resource or dictionary contract with vehicle_id, map_id, seed, and mode.",
+        "LobbyStartScreen emits start_match_requested(match_setup) instead of no-argument signal, with backwards-compatible adapter if needed.",
+        "TankGame validates match_setup and falls back to default values.",
+        "TankGame applies seed to TerrainWorld before showing world.",
+        "TankGame applies selected VehicleDefinition to the player tank before enabling input.",
+        "TankGame binds HUD to the player tank and capture points.",
+        "Update loading overlay steps to show validating setup, generating terrain, spawning tank, binding HUD, ready."
+      ],
+      "acceptance": [
+        "Single-player/no-peer Start Match still works.",
+        "Lobby-selected tank and seed affect the match world.",
+        "Loading feedback names the current match preparation step.",
+        "No fragile hardcoded UI paths leak into gameplay scripts beyond explicit exported NodePaths."
+      ]
+    },
+    {
+      "id": "V02-G-network-readiness",
+      "title": "Network Readiness Contracts",
+      "goal": "Prepare v0.2 systems so multiplayer authority can be added without rewriting feature code.",
+      "ordered_tasks": [
+        "Document stable ids: vehicle_id, map_id, seed, capture_point_id, peer_id.",
+        "Ensure match setup payload contains only deterministic primitive values and stable ids, not raw Resource instances.",
+        "Ensure capture point state can be replicated as owner_id/progress/occupants summary.",
+        "Ensure ammo/reload state can be host-authoritative later.",
+        "Ensure damage events can remain host-validated before applying HP changes.",
+        "Add debug labels or logs for selected ids only; do not log secrets or Steam credentials."
+      ],
+      "acceptance": [
+        "Roadmap/runbook identifies what is local-only in v0.2 and what must be host-authoritative later.",
+        "No new feature relies on random local-only state after match start.",
+        "No future network payload requires serializing Godot Resource objects directly."
+      ]
+    }
+  ],
+  "abc_execution_plan": {
+    "note": "This roadmap is prepared for ABC execution, but no Alice/Bob/Charlie delegation is started by this file alone.",
+    "suggested_slices": [
+      {
+        "id": "ABC0-v02-roadmap",
+        "owner": "Charlie",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "TANK_MP_V02_ROADMAP.json",
+          "TANK_MP_FEATURE_ROADMAP.json",
+          "TANK_MP_RUNBOOK.md"
+        ],
+        "goal": "Save v0.2 scope and operator language."
+      },
+      {
+        "id": "ABC1-v02-resource-models",
+        "owner": "Bob",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/tank/vehicle_definition.gd",
+          "scenes/tank/weapon_stats.gd",
+          "scenes/tank/*_tank_definition.tres",
+          "scenes/tank/*_weapon_stats.tres",
+          "scenes/tank/vehicle_stats.gd",
+          "scenes/tank/*.uid"
+        ],
+        "goal": "Create resource model and three initial tank definitions."
+      },
+      {
+        "id": "ABC2-v02-tank-runtime",
+        "owner": "Charlie",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/tank/tank_controller.gd",
+          "scenes/tank/tank.tscn",
+          "scenes/projectile/**",
+          "scenes/target_dummy/**"
+        ],
+        "goal": "Wire selected stats, weapon stats, ammo/reload, and health signals into runtime tank behavior."
+      },
+      {
+        "id": "ABC3-v02-lobby-selection",
+        "owner": "Alice",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/ui/lobby_start_screen.tscn",
+          "scenes/ui/lobby_start_screen.gd",
+          "TANK_MP_RUNBOOK.md"
+        ],
+        "goal": "Add lobby tank selection, seed input, settings preview, and operator docs."
+      },
+      {
+        "id": "ABC4-v02-terrain-seed",
+        "owner": "Charlie",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/terrain/terrain_generation_settings.gd",
+          "scenes/terrain/terrain_world.gd",
+          "scenes/terrain/terrain_world.tscn",
+          "scenes/terrain/*.tres",
+          "scenes/terrain/*.uid"
+        ],
+        "goal": "Make TerrainWorld deterministic and configurable from seed/settings."
+      },
+      {
+        "id": "ABC5-v02-hud",
+        "owner": "Bob",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/ui/match_hud/**",
+          "scenes/tank_game/tank_game.tscn",
+          "scenes/tank_game/tank_game.gd"
+        ],
+        "goal": "Create match HUD and bind HP/ammo/reload/capture status."
+      },
+      {
+        "id": "ABC6-v02-capture-points",
+        "owner": "Charlie",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "scenes/capture_point/**",
+          "scenes/vehicle_test/vehicle_test.tscn",
+          "scenes/tank_game/tank_game.tscn"
+        ],
+        "goal": "Implement node-based capture point scene and place initial objectives."
+      },
+      {
+        "id": "ABC7-v02-integration-tests",
+        "owner": "Charlie",
+        "mode": "worker",
+        "status": "planned",
+        "allowed_files": [
+          "TANK_MP_V02_ROADMAP.json",
+          "TANK_MP_RUNBOOK.md",
+          "runtime_logs/**"
+        ],
+        "goal": "Run focused Godot checks, manual MCP scene smoke tests, commit, and push."
+      }
+    ]
+  },
+  "verification_plan": {
+    "json_validation": [
+      "Get-Content TANK_MP_V02_ROADMAP.json -Raw | ConvertFrom-Json"
+    ],
+    "script_checks": [
+      "Godot --check-only res://scenes/tank/tank_controller.gd",
+      "Godot --check-only res://scenes/tank/vehicle_stats.gd",
+      "Godot --check-only res://scenes/tank/weapon_stats.gd",
+      "Godot --check-only res://scenes/tank/vehicle_definition.gd",
+      "Godot --check-only res://scenes/terrain/terrain_world.gd",
+      "Godot --check-only res://scenes/terrain/terrain_generation_settings.gd",
+      "Godot --check-only res://scenes/capture_point/capture_point.gd",
+      "Godot --check-only res://scenes/ui/lobby_start_screen.gd",
+      "Godot --check-only res://scenes/tank_game/tank_game.gd"
+    ],
+    "scene_smoke_tests": [
+      "Run res://scenes/vehicle_test/vehicle_test.tscn for local tank, ammo, HP, capture, and terrain seed checks.",
+      "Run res://scenes/tank_game/tank_game.tscn and start match from lobby with selected tank and seed.",
+      "MCP screenshot check: terrain visible, HUD visible, selected tank spawned, capture points visible.",
+      "MCP runtime check: same seed produces same TerrainWorld fingerprint across two starts.",
+      "MCP runtime check: firing reduces ammo and reload progress changes.",
+      "MCP runtime check: damage changes HP bar.",
+      "MCP runtime check: standing in capture point changes capture progress."
+    ],
+    "manual_gates": [
+      "Lobby tank selection feels understandable and compact.",
+      "Map seed controls are visible but do not clutter the basic lobby workflow.",
+      "Capture point markers are readable from the top-down camera.",
+      "At least one vehicle variant has a clearly different driving/combat feel."
+    ]
+  },
+  "stop_rules": [
+    "Do not touch scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import.",
+    "Stop on unrelated staged files.",
+    "Stop on secrets, Steam credentials, tokens, or private IDs.",
+    "Stop before destructive Git commands.",
+    "Stop if TerrainWorld determinism cannot be verified and the next slice depends on it.",
+    "Stop if adding vehicle definitions requires rewriting the Steam lobby bootstrap.",
+    "Stop if Godot script checks fail and the fix would require out-of-scope rewrites.",
+    "Stop before commit/push if branch or remote state is unclear."
+  ],
+  "go_language": {
+    "go": "v0.2 is Go when TankGame starts from lobby with selected tank and seed, generated terrain is visible and deterministic, ammo/reload/HP HUD works, and at least two capture points can be captured locally.",
+    "partial": "Vehicle selection and combat HUD work, but capture points or seeded terrain need another slice.",
+    "no_go": "Tank selection cannot be applied cleanly through resources, or terrain generation cannot remain deterministic.",
+    "deferred": "Full multiplayer authority, armor deflection, directional damage zones, drones, spider tanks, polished scoring, and final Terrain3D texture painting."
+  },
+  "future_after_v02": [
+    {
+      "version": "0.3",
+      "theme": "Host-authoritative multiplayer state sync",
+      "features": [
+        "Replicate match setup payload.",
+        "Spawn one selected tank per peer.",
+        "Host validates fire/ammo/damage/capture.",
+        "Capture point state sync.",
+        "Late-join match setup replay."
+      ]
+    },
+    {
+      "version": "0.4",
+      "theme": "Armor and hit locations",
+      "features": [
+        "Directional armor zones.",
+        "Impact angle and deflection.",
+        "Visual hit feedback by hit zone.",
+        "Different damage by impact location.",
+        "Track/turret subsystem damage as a later extension."
+      ]
+    },
+    {
+      "version": "0.5",
+      "theme": "Expanded vehicle classes",
+      "features": [
+        "Spider tanks with low slope penalty.",
+        "More tracked vehicles.",
+        "Role-specific capture bonuses.",
+        "Loadout resources."
+      ]
+    },
+    {
+      "version": "0.6",
+      "theme": "Drones and countermeasures",
+      "features": [
+        "Drone swarms.",
+        "Anti-drone flak.",
+        "Lasers.",
+        "Microwave pulse.",
+        "Jamming and smoke/chaff."
+      ]
+    }
+  ]
+}
