@@ -101,7 +101,9 @@ No-Go:
 
 Deferred:
 
-- Terrain3D is still an addon spike until compatibility, runtime height changes, and collision refresh are confirmed.
+- Terrain3D v1.0.2 is installed and passed the first Godot 4.7 smoke test.
+- The smoke scene is `res://scenes/terrain/terrain3d_smoke_test.tscn`.
+- The smoke test confirmed runtime height changes and collision refresh calls. Player-facing tank driving on Terrain3D is still a separate gate.
 - Voxel terrain.
 - Advanced vehicle physics.
 - Polished UI.

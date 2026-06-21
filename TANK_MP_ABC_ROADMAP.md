@@ -12,8 +12,9 @@ Build a playable Godot 4.7 3D/2.5D Steam multiplayer tank prototype: players hos
 - Current main scene: `res://scenes/cursor_mvp/cursor_mvp.tscn`.
 - Steam base exists in `res://scripts/globals/Online.gd` using GodotSteam, app ID `480`, `SteamMultiplayerPeer`, Steam lobby create/join, friend invite callback handling, and player registry.
 - `project.godot` currently sets `3d/physics_engine="Jolt Physics"`.
-- Terrain3D is not installed yet.
-- ABC1 recommendation: use Terrain3D v1.0.2-stable as a gated addon spike, install to `addons/terrain_3d`, then smoke-test with Godot 4.7 before relying on it.
+- Terrain3D v1.0.2 is installed in `addons/terrain_3d` and enabled in project plugins.
+- ABC1 recommendation was accepted: Terrain3D v1.0.2-stable is the MVP terrain base.
+- ABC5 smoke test passed in Godot 4.7: `Terrain3D` classes load, a blank region can be created, heights can be changed with `set_height()`, maps can be refreshed with `update_maps()`, collision can be rebuilt with `collision.update(true)`, and the test crater lowered height from `6.0` to `2.0`.
 - ABC3 operator docs exist in `TANK_MP_RUNBOOK.md`.
 - ABC2/ABC2b initial foundation exists: `TankGame`, `LobbyStartScreen`, placeholder `TerrainWorld`, `Tank`, and `Projectile` scenes.
 - Voxel terrain is intentionally out of scope for the MVP because no tunnels, caves, or terrain overhangs are required.
@@ -41,8 +42,8 @@ Build a playable Godot 4.7 3D/2.5D Steam multiplayer tank prototype: players hos
 - Stop on hotfile conflicts or unrelated staged files.
 - Stop if a slice would require destructive git commands.
 - Stop if secrets, tokens, or private IDs would be committed or logged.
-- Stop if Terrain3D is not compatible with the local Godot 4.7 runtime.
-- Stop if Terrain3D runtime terrain/collision deformation cannot support MVP crater gameplay.
+- Stop if later Terrain3D gameplay integration fails beyond the smoke-test surface.
+- Stop if Terrain3D runtime collision behavior diverges from visible crater deformation in player-facing tests.
 - Stop if tests fail outside the slice scope and the fix is unclear.
 - Stop before pushing if remote, branch, or staged scope is unclear.
 
@@ -222,6 +223,7 @@ Verification:
 Owner: Bob
 
 Execution mode: worker
+Status: partial
 
 Outcome:
 - Integrate Terrain3D or the selected terrain solution enough for tanks to drive over visible 2.5D terrain.
@@ -234,6 +236,8 @@ Requirements:
 
 Verification:
 - Local play: tank drives over terrain without falling through or jittering badly.
+- Terrain3D smoke gate passed via `res://scenes/terrain/terrain3d_smoke_test.tscn`.
+- Remaining: replace placeholder terrain in `TankGame` with Terrain3D-backed terrain and verify tank driving on it.
 
 ### ABC6-projectiles-craters
 
@@ -373,6 +377,10 @@ Path completion:
   - `res://scenes/terrain/terrain_world.gd`
 - Current boot check passed:
   - `Godot_v4.7-stable_win64_console.exe --headless --log-file E:/Godot_With_Steam/runtime_logs/boot-tank-game.log --path <project> --quit-after 3`
+- Terrain3D smoke check passed:
+  - `Godot_v4.7-stable_win64_console.exe --headless --log-file E:/Godot_With_Steam/runtime_logs/check-terrain3d-smoke.log --path <project> --check-only --script res://scenes/terrain/terrain3d_smoke_test.gd`
+  - `Godot_v4.7-stable_win64_console.exe --headless --log-file E:/Godot_With_Steam/runtime_logs/run-terrain3d-smoke.log --path <project> res://scenes/terrain/terrain3d_smoke_test.tscn --quit-after 3`
+  - Result: `Terrain3D smoke height before=6.0 after=2.0`, `TERRAIN3D_SMOKE_OK`.
 - Local gameplay gate: host/offline tank scene runs, tank moves, turret aims.
 - Terrain gate: tank drives on terrain; crater changes visible terrain and collision enough for MVP.
 - Steam gate: host creates lobby, lobby ID copy works, client paste/join works, host starts match.
@@ -390,7 +398,7 @@ Partial:
 - Lobby and local tank/terrain loop works, but multiplayer crater sync or late join is incomplete.
 
 No-Go:
-- Terrain3D cannot be installed or cannot provide usable runtime deformation/collision for the MVP.
+- Terrain3D cannot provide usable runtime deformation/collision beyond the current smoke-test in player-facing terrain integration.
 - Steam lobby creation/join is broken in a way that blocks two-machine testing.
 
 Deferred:

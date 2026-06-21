@@ -3,6 +3,9 @@
 /android/
 export_presets.cfg
 addons/godotsteam/**/~*
+addons/terrain_3d/**/~*
+# Terrain3D release demo content is useful locally but not required by this prototype.
+/demo/
 # Other ignores
 /local/*
 export_presets.cfg
