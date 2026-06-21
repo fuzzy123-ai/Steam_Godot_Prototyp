@@ -1,6 +1,8 @@
 @tool
 extends Node3D
 
+signal crater_applied(event: Dictionary)
+
 @export var terrain_path: NodePath = NodePath("Terrain3D")
 @export var preview_mesh_path: NodePath = NodePath("PreviewMesh")
 @export var preview_collision_shape_path: NodePath = NodePath("PreviewCollision/CollisionShape3D")
@@ -112,18 +114,46 @@ func get_normal_at(world_position: Vector3) -> Vector3:
 	return normal.normalized()
 
 
-func apply_crater(center: Vector3, radius: float, depth: float) -> bool:
-	if radius <= 0.0 or depth <= 0.0:
-		return false
-
-	_crater_events.append({
+func apply_crater(center: Vector3, radius: float, depth: float, emit_event: bool = true) -> bool:
+	return apply_crater_event({
 		"x": snappedf(center.x, 0.001),
 		"z": snappedf(center.z, 0.001),
 		"radius": snappedf(radius, 0.001),
 		"depth": snappedf(depth, 0.001)
-	})
+	}, emit_event)
+
+
+func apply_crater_event(event: Dictionary, emit_event: bool = true) -> bool:
+	var crater_event := _sanitize_crater_event(event)
+	if crater_event.is_empty():
+		return false
+
+	_crater_events.append(crater_event)
 	_rebuild_preview_mesh()
+	if emit_event:
+		crater_applied.emit(crater_event.duplicate(true))
 	return true
+
+
+func apply_crater_events(events: Array, clear_existing: bool = true, emit_events: bool = false) -> int:
+	if clear_existing:
+		_crater_events.clear()
+
+	var applied_count := 0
+	for raw_event: Variant in events:
+		if typeof(raw_event) != TYPE_DICTIONARY:
+			continue
+		var crater_event := _sanitize_crater_event(raw_event)
+		if crater_event.is_empty():
+			continue
+		_crater_events.append(crater_event)
+		applied_count += 1
+		if emit_events:
+			crater_applied.emit(crater_event.duplicate(true))
+
+	if clear_existing or applied_count > 0:
+		_rebuild_preview_mesh()
+	return applied_count
 
 
 func clear_deformations() -> void:
@@ -131,6 +161,19 @@ func clear_deformations() -> void:
 		return
 	_crater_events.clear()
 	_rebuild_preview_mesh()
+
+
+func _sanitize_crater_event(event: Dictionary) -> Dictionary:
+	var radius := snappedf(float(event.get("radius", 0.0)), 0.001)
+	var depth := snappedf(float(event.get("depth", 0.0)), 0.001)
+	if radius <= 0.0 or depth <= 0.0:
+		return {}
+	return {
+		"x": snappedf(float(event.get("x", 0.0)), 0.001),
+		"z": snappedf(float(event.get("z", 0.0)), 0.001),
+		"radius": radius,
+		"depth": depth
+	}
 
 
 func _rebuild_terrain() -> void:

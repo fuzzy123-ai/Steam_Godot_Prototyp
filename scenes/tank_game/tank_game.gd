@@ -7,9 +7,12 @@ extends Node
 @onready var preview_tank: Node3D = %PreviewTank
 @onready var terrain: Node3D = %Terrain
 @onready var capture_points: Node3D = %CapturePoints
+@onready var projectiles: Node3D = $World/Projectiles
 
 @export var default_vehicle_definition: Resource
 @export var vehicle_definitions: Array[Resource] = []
+@export var sync_projectile_spawns: bool = true
+@export var synced_projectile_scene: PackedScene
 
 var match_started: bool = false
 
@@ -19,6 +22,10 @@ func _ready() -> void:
 	match_status_label.hide()
 	match_hud.hide()
 	lobby_start_screen.start_match_requested.connect(_on_start_match_requested)
+	if terrain != null and terrain.has_signal("crater_applied"):
+		terrain.crater_applied.connect(_on_terrain_crater_applied)
+	if preview_tank != null and preview_tank.has_signal("projectile_fired"):
+		preview_tank.connect("projectile_fired", Callable(self, "_on_tank_projectile_fired"))
 
 
 func _on_start_match_requested(match_setup: Dictionary = {}) -> void:
@@ -56,6 +63,8 @@ func _start_match(match_setup: Dictionary = {}) -> void:
 		_selected_vehicle_name(match_setup)
 	]
 	match_status_label.show()
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		_request_terrain_deformation_state.rpc_id(1)
 
 
 func _apply_match_setup(match_setup: Dictionary) -> void:
@@ -68,6 +77,129 @@ func _apply_match_setup(match_setup: Dictionary) -> void:
 		selected_vehicle = default_vehicle_definition
 	if selected_vehicle != null and preview_tank.has_method("apply_vehicle_definition"):
 		preview_tank.call("apply_vehicle_definition", selected_vehicle)
+
+
+func _on_terrain_crater_applied(event: Dictionary) -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	_receive_terrain_crater.rpc(event)
+
+
+@rpc("authority", "reliable")
+func _receive_terrain_crater(event: Dictionary) -> void:
+	if terrain == null or not terrain.has_method("apply_crater_event"):
+		return
+	terrain.call("apply_crater_event", event, false)
+
+
+@rpc("any_peer", "reliable")
+func _request_terrain_deformation_state() -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id <= 0 or sender_id == multiplayer.get_unique_id():
+		return
+	var events: Array = []
+	if terrain != null and terrain.has_method("get_crater_events"):
+		events = terrain.call("get_crater_events")
+	_receive_terrain_deformation_state.rpc_id(sender_id, events)
+
+
+@rpc("authority", "reliable")
+func _receive_terrain_deformation_state(events: Array) -> void:
+	if terrain == null or not terrain.has_method("apply_crater_events"):
+		return
+	terrain.call("apply_crater_events", events, true, false)
+
+
+func _on_tank_projectile_fired(spawn_data: Dictionary) -> void:
+	if not sync_projectile_spawns or not multiplayer.has_multiplayer_peer():
+		return
+	var projectile_event := _sanitize_projectile_spawn(spawn_data)
+	if projectile_event.is_empty():
+		return
+	if multiplayer.is_server():
+		_receive_projectile_spawn.rpc(projectile_event)
+	else:
+		_request_projectile_spawn.rpc_id(1, projectile_event)
+
+
+@rpc("any_peer", "reliable")
+func _request_projectile_spawn(spawn_data: Dictionary) -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	var projectile_event := _sanitize_projectile_spawn(spawn_data)
+	if projectile_event.is_empty():
+		return
+	_spawn_synced_projectile(projectile_event, true)
+	_receive_projectile_spawn.rpc(projectile_event)
+
+
+@rpc("authority", "reliable")
+func _receive_projectile_spawn(spawn_data: Dictionary) -> void:
+	var projectile_event := _sanitize_projectile_spawn(spawn_data)
+	if projectile_event.is_empty():
+		return
+	_spawn_synced_projectile(projectile_event, false)
+
+
+func _spawn_synced_projectile(spawn_data: Dictionary, gameplay_effects: bool) -> void:
+	var projectile_scene := _projectile_scene_for_sync()
+	if projectile_scene == null or projectiles == null:
+		return
+	var projectile := projectile_scene.instantiate()
+	if not projectile is Node3D:
+		projectile.queue_free()
+		return
+
+	projectiles.add_child(projectile)
+	var projectile_node := projectile as Node3D
+	projectile_node.global_position = spawn_data["position"]
+	if projectile.has_method("set_terrain_probe"):
+		projectile.call("set_terrain_probe", terrain)
+	if projectile.get("gameplay_effects_enabled") != null:
+		projectile.set("gameplay_effects_enabled", gameplay_effects)
+	if not gameplay_effects and projectile.get("crater_on_terrain_hit") != null:
+		projectile.set("crater_on_terrain_hit", false)
+	if projectile.has_method("launch"):
+		projectile.call(
+			"launch",
+			null,
+			spawn_data["direction"],
+			float(spawn_data["speed"]),
+			float(spawn_data["damage"])
+		)
+
+
+func _projectile_scene_for_sync() -> PackedScene:
+	if synced_projectile_scene != null:
+		return synced_projectile_scene
+	if preview_tank == null:
+		return null
+	var tank_projectile_scene = preview_tank.get("projectile_scene")
+	if tank_projectile_scene is PackedScene:
+		return tank_projectile_scene
+	return null
+
+
+func _sanitize_projectile_spawn(spawn_data: Dictionary) -> Dictionary:
+	var raw_position: Variant = spawn_data.get("position", Vector3.ZERO)
+	var raw_direction: Variant = spawn_data.get("direction", Vector3.FORWARD)
+	if typeof(raw_position) != TYPE_VECTOR3 or typeof(raw_direction) != TYPE_VECTOR3:
+		return {}
+	var position := raw_position as Vector3
+	var direction := (raw_direction as Vector3).normalized()
+	var speed := snappedf(float(spawn_data.get("speed", 0.0)), 0.001)
+	var damage := snappedf(float(spawn_data.get("damage", 0.0)), 0.001)
+	if not position.is_finite() or not direction.is_finite() or direction.length_squared() <= 0.001 or speed <= 0.0:
+		return {}
+	return {
+		"position": position,
+		"direction": direction,
+		"speed": speed,
+		"damage": damage,
+		"owner_peer_id": int(spawn_data.get("owner_peer_id", 1))
+	}
 
 
 func _prepare_match_setup(match_setup: Dictionary) -> Dictionary:

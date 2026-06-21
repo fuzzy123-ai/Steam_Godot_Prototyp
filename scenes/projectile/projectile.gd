@@ -12,6 +12,7 @@ signal impacted(hit_data: Dictionary)
 @export var crater_on_terrain_hit: bool = true
 @export_range(0.25, 12.0, 0.25) var crater_radius: float = 3.0
 @export_range(0.1, 6.0, 0.1) var crater_depth: float = 1.2
+@export var gameplay_effects_enabled: bool = true
 
 var _age: float = 0.0
 var _direction := Vector3.FORWARD
@@ -71,7 +72,8 @@ func set_terrain_probe(terrain_probe: Node) -> void:
 func _handle_impact(hit: Dictionary) -> void:
 	global_position = hit["position"]
 	var target: Node = hit.get("collider")
-	if crater_on_terrain_hit and target != null and target.has_method("apply_crater"):
+	var can_author_gameplay := _can_author_gameplay()
+	if gameplay_effects_enabled and crater_on_terrain_hit and can_author_gameplay and target != null and target.has_method("apply_crater"):
 		target.call("apply_crater", global_position, crater_radius, crater_depth)
 	var hit_data := {
 		"position": hit["position"],
@@ -86,9 +88,13 @@ func _handle_impact(hit: Dictionary) -> void:
 		"hit_zone": StringName(&"unknown")
 	}
 	impacted.emit(hit_data)
-	if target != null and target.has_method("apply_hit"):
+	if gameplay_effects_enabled and can_author_gameplay and target != null and target.has_method("apply_hit"):
 		target.call("apply_hit", hit_data)
 	queue_free()
+
+
+func _can_author_gameplay() -> bool:
+	return not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
 
 
 func _intersect_terrain(start: Vector3, end: Vector3) -> Dictionary:

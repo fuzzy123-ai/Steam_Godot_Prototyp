@@ -59,6 +59,47 @@ func _run() -> void:
 		print("FAIL crater fingerprint")
 		quit(1)
 		return
+	if not terrain.has_method("get_crater_events") or not terrain.has_method("apply_crater_events") or not terrain.has_method("get_deformation_fingerprint"):
+		print("FAIL terrain crater replay API missing")
+		quit(1)
+		return
+	var crater_events: Array = terrain.call("get_crater_events")
+	if crater_events.size() != 1:
+		print("FAIL crater event count=", crater_events.size())
+		quit(1)
+		return
+	var first_event: Dictionary = crater_events[0]
+	for key: String in ["x", "z", "radius", "depth"]:
+		if not first_event.has(key):
+			print("FAIL crater event missing key=", key)
+			quit(1)
+			return
+
+	var terrain_scene := load("res://scenes/terrain/terrain_world.tscn") as PackedScene
+	if terrain_scene == null:
+		print("FAIL terrain scene")
+		quit(1)
+		return
+	var replay_terrain := terrain_scene.instantiate()
+	root.add_child(replay_terrain)
+	await process_frame
+	if replay_terrain.has_method("apply_seed"):
+		replay_terrain.call("apply_seed", int(terrain.get("seed")))
+	replay_terrain.call("apply_crater_events", crater_events, true, false)
+	var replay_height := float(replay_terrain.call("get_height_at", crater_center))
+	var replay_fingerprint := str(replay_terrain.call("get_generation_fingerprint"))
+	print("STEP crater replay height=", replay_height, " terrain=", replay_fingerprint)
+	if absf(replay_height - height_after) > 0.01 or replay_fingerprint != terrain_fingerprint_after:
+		print("FAIL crater replay mismatch")
+		quit(1)
+		return
+	replay_terrain.call("apply_crater_events", crater_events, true, false)
+	var replay_again_fingerprint := str(replay_terrain.call("get_generation_fingerprint"))
+	if replay_again_fingerprint != replay_fingerprint:
+		print("FAIL crater replay idempotence")
+		quit(1)
+		return
+	replay_terrain.queue_free()
 
 	if terrain.has_method("clear_deformations"):
 		terrain.call("clear_deformations")
@@ -90,6 +131,30 @@ func _run() -> void:
 		return
 	if projectile_fingerprint_after == projectile_fingerprint_before:
 		print("FAIL projectile crater fingerprint")
+		quit(1)
+		return
+	if terrain.has_method("clear_deformations"):
+		terrain.call("clear_deformations")
+
+	var visual_projectile: Node = projectile_scene.instantiate()
+	game.get_node("World/Projectiles").add_child(visual_projectile)
+	var visual_projectile_node := visual_projectile as Node3D
+	var visual_center := Vector3(3.0, 0.0, -5.0)
+	var visual_height_before := float(terrain.call("get_height_at", visual_center))
+	var visual_fingerprint_before := str(terrain.call("get_generation_fingerprint"))
+	visual_projectile_node.global_position = Vector3(visual_center.x, visual_height_before + 3.0, visual_center.z)
+	if visual_projectile.has_method("set_terrain_probe"):
+		visual_projectile.call("set_terrain_probe", terrain)
+	visual_projectile.set("gameplay_effects_enabled", false)
+	visual_projectile.set("crater_radius", 2.5)
+	visual_projectile.set("crater_depth", 0.9)
+	visual_projectile.call("launch", tank, Vector3.DOWN, 24.0, 10.0)
+	await create_timer(0.35).timeout
+	var visual_height_after := float(terrain.call("get_height_at", visual_center))
+	var visual_fingerprint_after := str(terrain.call("get_generation_fingerprint"))
+	print("STEP visual projectile terrain=", visual_height_before, "->", visual_height_after, " fingerprint=", visual_fingerprint_after)
+	if absf(visual_height_after - visual_height_before) > 0.01 or visual_fingerprint_after != visual_fingerprint_before:
+		print("FAIL visual projectile changed terrain")
 		quit(1)
 		return
 

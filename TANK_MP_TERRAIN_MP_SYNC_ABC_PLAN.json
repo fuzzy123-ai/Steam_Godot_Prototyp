@@ -1,0 +1,109 @@
+{
+  "id": "tank_mp_terrain_mp_sync_abc",
+  "created": "2026-06-21",
+  "owner": "Charlie",
+  "status": "validation_passed",
+  "goal": "Projectiles and terrain deformation are synchronized in multiplayer: projectile spawns are replicated from the host, crater results are host-authoritative deterministic events, and all peers query the same deformed terrain heights and normals for movement and targeting.",
+  "non_goals": [
+    "Dedicated server support",
+    "Projectile lag compensation or rewind/replay reconciliation",
+    "Full late-join match recovery beyond deformation replay request",
+    "Persistent crater save/load",
+    "Chunked terrain rebuild optimization",
+    "Advanced armor deflection or directional damage"
+  ],
+  "constraints": [
+    "Prefer node/scene/Inspector configuration; keep runtime code only for behavior that cannot be represented as nodes.",
+    "Do not sync Terrain3D data, mesh buffers, collision buffers, images, or large binary state.",
+    "Do not touch or stage scenes/player_character/dependencies/robot_model/3DGodotRobot.glb.import.",
+    "Godot version for validation is E:/Godot_With_Steam/tools/godot-4.7/Godot_v4.7-stable_win64_console.exe."
+  ],
+  "sync_contract": {
+    "terrain_seed": "Host includes the seed in the existing match setup RPC.",
+    "projectile_spawn": "Host broadcasts primitive spawn data for visible projectiles: position, direction, speed, and damage.",
+    "deformation_event": {
+      "x": "float, snapped world x",
+      "z": "float, snapped world z",
+      "radius": "float, snapped crater radius",
+      "depth": "float, snapped crater depth"
+    },
+    "ordering": "Events are applied in host order. Fingerprint is seed/settings plus ordered crater events.",
+    "authority": "Only server/host authors projectile gameplay effects and crater events while a multiplayer peer is active. Client projectiles are visual/simulation followers.",
+    "replay": "Clients can request the current crater event list from the host and rebuild locally."
+  },
+  "slices": [
+    {
+      "id": "ABC0",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "TANK_MP_TERRAIN_MP_SYNC_ABC_PLAN.json"
+      ],
+      "acceptance": "Plan records concrete scope, stop rules, sync contract, and verification gates."
+    },
+    {
+      "id": "ABC1",
+      "owner": "Alice",
+      "status": "done",
+      "scope": [
+        "TANK_MP_RUNBOOK.md",
+        "TANK_MP_TERRAIN_MP_SYNC_ABC_PLAN.json"
+      ],
+      "acceptance": "Runbook accurately describes the MP deformation gate and leaves local-only v0.2.1 history intact.",
+      "notes": "Added v0.2.2 operator docs for host-authoritative primitive crater-event sync, automatic tank movement/targeting response via deformed terrain height/normal queries, and manual seed plus crater fingerprint comparison."
+    },
+    {
+      "id": "ABC2",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "scenes/terrain/terrain_world.gd"
+      ],
+      "acceptance": "TerrainWorld can sanitize, emit, apply, clear, and replay primitive crater events deterministically."
+    },
+    {
+      "id": "ABC3",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "scenes/tank_game/tank_game.gd",
+        "scenes/projectile/projectile.gd"
+      ],
+      "acceptance": "Host broadcasts projectile spawns and crater events reliably; clients request/replay deformation state after match start; client projectiles do not author terrain craters or gameplay damage."
+    },
+    {
+      "id": "ABC4",
+      "owner": "Bob",
+      "status": "done",
+      "scope": [
+        "read-only audit",
+        "runtime_logs/v02_runtime_smoke.gd"
+      ],
+      "acceptance": "Audit identifies any missing smoke assertions or likely GDScript/runtime failure points before commit.",
+      "notes": "Read-only audit recommended untyped RPC arrays, no call_local double-apply, replay after seed setup, visual-only projectile safety, and local replay/idempotence smoke assertions."
+    },
+    {
+      "id": "ABC5",
+      "owner": "Charlie",
+      "status": "done",
+      "scope": [
+        "runtime_logs/v02_runtime_smoke.gd",
+        "focused Godot CLI checks"
+      ],
+      "acceptance": "Runtime smoke proves crater replay/fingerprint behavior and the match scene still starts.",
+      "notes": "Godot headless runtime smoke passed: crater replay fingerprint matched, visual projectile did not change terrain, projectile crater and core tank flow still passed."
+    }
+  ],
+  "tests": [
+    "Godot headless/runtime smoke for res://runtime_logs/v02_runtime_smoke.gd.",
+    "GDScript parse/load of changed scenes and scripts through Godot CLI.",
+    "Manual two-machine gate: host starts match, fires a projectile, client sees a synced projectile and the same crater, and tank slowdown/aim blocking follows the deformed terrain."
+  ],
+  "stop_rules": [
+    "Stop on secrets or credentials.",
+    "Stop on unrelated staged files.",
+    "Stop on destructive Git commands.",
+    "Stop if another agent edits outside its declared scope.",
+    "Stop if Godot reports a parse/runtime error that cannot be corrected within this slice."
+  ]
+}

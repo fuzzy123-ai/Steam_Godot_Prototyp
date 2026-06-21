@@ -6,6 +6,7 @@ const WeaponStatsScript := preload("res://scenes/tank/weapon_stats.gd")
 signal health_changed(current_health: float, max_health: float)
 signal ammo_changed(current_ammo: int, ammo_capacity: int)
 signal reload_changed(reload_remaining: float, reload_seconds: float)
+signal projectile_fired(spawn_data: Dictionary)
 
 @export var stats: Resource
 @export var weapon_stats: Resource
@@ -218,13 +219,11 @@ func _try_fire() -> void:
 	if projectile.has_method("set_terrain_probe"):
 		projectile.call("set_terrain_probe", _terrain_probe)
 	if projectile.has_method("launch"):
-		projectile.call(
-			"launch",
-			self,
-			_get_turret_forward(),
-			_weapon_float(&"projectile_speed", _stat_float(&"shot_speed", 42.0)),
-			_weapon_float(&"damage", _stat_float(&"shot_damage", 35.0))
-		)
+		var shot_direction := _get_turret_forward()
+		var shot_speed := _weapon_float(&"projectile_speed", _stat_float(&"shot_speed", 42.0))
+		var shot_damage := _weapon_float(&"damage", _stat_float(&"shot_damage", 35.0))
+		projectile.call("launch", self, shot_direction, shot_speed, shot_damage)
+		projectile_fired.emit(_build_projectile_spawn_data(projectile_node, shot_direction, shot_speed, shot_damage))
 	current_ammo = maxi(0, current_ammo - 1)
 	ammo_changed.emit(current_ammo, ammo_capacity)
 	_fire_cooldown_remaining = _weapon_float(&"reload_seconds", _stat_float(&"fire_cooldown_seconds", 0.8))
@@ -233,6 +232,16 @@ func _try_fire() -> void:
 
 func _get_turret_forward() -> Vector3:
 	return -turret_pivot.global_basis.z.normalized()
+
+
+func _build_projectile_spawn_data(projectile_node: Node3D, direction: Vector3, shot_speed: float, shot_damage: float) -> Dictionary:
+	return {
+		"position": projectile_node.global_position,
+		"direction": direction.normalized(),
+		"speed": snappedf(shot_speed, 0.001),
+		"damage": snappedf(shot_damage, 0.001),
+		"owner_peer_id": multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+	}
 
 
 func _update_terrain_sample() -> void:
