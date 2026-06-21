@@ -10,6 +10,7 @@ class_name Lobby
 @onready var main_menu: MainMenuUI = %MainMenuUI
 @onready var steam_friends_list: Panel = %SteamFriendsList
 @onready var in_game_ui: Control = %InGameUI
+@onready var game_settings_menu: Control = %GameSettingsMenu
 
 var _current_lobby: String:
 	get: return Online.LOCAL_SERVER_ADDRESS if not Online.steam_lobby_id else str(Online.steam_lobby_id)
@@ -130,7 +131,17 @@ func _on_quit_requested() -> void:
 	get_tree().quit()
 
 func _input(event: InputEvent) -> void:
-	if Input.is_action_just_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel"):
+		if game_settings_menu != null and game_settings_menu.has_method("open_pause_menu"):
+			var is_settings_open := false
+			if game_settings_menu.has_method("is_menu_open"):
+				is_settings_open = bool(game_settings_menu.call("is_menu_open"))
+			if is_settings_open and game_settings_menu.has_method("close_menu"):
+				game_settings_menu.call("close_menu")
+			else:
+				game_settings_menu.call("open_pause_menu")
+			get_viewport().set_input_as_handled()
+			return
 		if main_menu.visible: return
 		if in_game_ui.visible: in_game_ui.hide()
 		else:
@@ -139,11 +150,14 @@ func _input(event: InputEvent) -> void:
 			else: steam_friends_list.hide()
 			in_game_ui.show()
 	elif event.is_action_pressed("toggle_fullscreen"):
-		var current_mode = DisplayServer.window_get_mode()
-		if current_mode == DisplayServer.WINDOW_MODE_WINDOWED: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		else: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		if game_settings_menu != null and game_settings_menu.has_method("cycle_display_mode"):
+			game_settings_menu.call("cycle_display_mode")
+			get_viewport().set_input_as_handled()
 	
 func _on_exit_lobby_button_pressed() -> void: Online.leave_lobby()
+
+func _on_settings_quit_game_requested() -> void:
+	_on_quit_requested()
 
 func _on_lobby_info_button_pressed() -> void:
 	DisplayServer.clipboard_set(_current_lobby)

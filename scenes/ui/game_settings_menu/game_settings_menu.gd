@@ -50,6 +50,22 @@ func _on_settings_pressed() -> void:
 	_open_options_menu()
 
 
+func open_pause_menu() -> void:
+	_open_pause_menu()
+
+
+func open_options_menu() -> void:
+	_open_options_menu()
+
+
+func close_menu() -> void:
+	_close_menu()
+
+
+func is_menu_open() -> bool:
+	return overlay.visible
+
+
 func _open_pause_menu() -> void:
 	title_label.text = "Pause"
 	options_container.hide()

@@ -1,10 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://du16s66efs5tt"]
+[gd_scene load_steps=4 format=3 uid="uid://du16s66efs5tt"]
 
 [ext_resource type="Script" path="res://scenes/ui/game_settings_menu/game_settings_menu.gd" id="1_settings"]
 [ext_resource type="Script" path="res://scripts/globals/DisplaySettings.gd" id="2_display_settings"]
+[ext_resource type="Script" path="res://scenes/ui/game_settings_menu/settings_icon.gd" id="3_settings_icon"]
 
 [node name="GameSettingsMenu" type="Control"]
 unique_name_in_owner = true
+z_index = 100
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,7 +32,17 @@ grow_horizontal = 0
 mouse_filter = 0
 mouse_default_cursor_shape = 2
 theme_override_font_sizes/font_size = 28
-text = "⚙"
+tooltip_text = "Settings"
+
+[node name="SettingsIcon" type="Control" parent="SettingsButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_settings_icon")
 
 [node name="Overlay" type="Control" parent="."]
 visible = false
