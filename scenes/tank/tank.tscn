@@ -1,6 +1,8 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/tank/tank_controller.gd" id="1_tank"]
+[ext_resource type="PackedScene" path="res://assets/low_poly_tanks/tank_battle_bg.fbx" id="2_low_poly_tanks"]
+[ext_resource type="Script" path="res://scenes/tank/low_poly_tank_visual.gd" id="3_low_poly_visual"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_tank"]
 size = Vector3(1.6, 0.7, 2.2)
@@ -24,15 +26,37 @@ roughness = 0.82
 albedo_color = Color(0.14, 0.18, 0.21, 1)
 roughness = 0.76
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aim_clear"]
+albedo_color = Color(0.1, 0.95, 0.28, 1)
+emission_enabled = true
+emission = Color(0.1, 0.95, 0.28, 1)
+roughness = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aim_blocked"]
+albedo_color = Color(1, 0.12, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.12, 0.08, 1)
+roughness = 0.4
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_aim_line"]
+
 [node name="Tank" type="CharacterBody3D"]
 script = ExtResource("1_tank")
+aim_clear_material = SubResource("StandardMaterial3D_aim_clear")
+aim_blocked_material = SubResource("StandardMaterial3D_aim_blocked")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 position = Vector3(0, 0.35, 0)
 shape = SubResource("BoxShape_tank")
 
+[node name="LowPolyBody" parent="." instance=ExtResource("2_low_poly_tanks")]
+position = Vector3(-8.67, 0, 4.25)
+script = ExtResource("3_low_poly_visual")
+visible_mesh_names = PackedStringArray("Cube_041")
+
 [node name="Chassis" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.3, 0)
+visible = false
 mesh = SubResource("BoxMesh_chassis")
 surface_material_override/0 = SubResource("StandardMaterial3D_chassis")
 
@@ -53,3 +77,9 @@ surface_material_override/0 = SubResource("StandardMaterial3D_turret")
 [node name="Muzzle" type="Marker3D" parent="TurretPivot"]
 unique_name_in_owner = true
 position = Vector3(0, 0, -1.6)
+
+[node name="AimLine" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+cast_shadow = 0
+mesh = SubResource("ImmediateMesh_aim_line")
+surface_material_override/0 = SubResource("StandardMaterial3D_aim_clear")
