@@ -32,7 +32,7 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
 	_connect_signals()
-	_set_joined(multiplayer.has_multiplayer_peer())
+	_set_joined(false)
 	_update_status("Ready. Start Steam before hosting or joining.")
 
 
@@ -67,8 +67,11 @@ func _build_ui() -> void:
 	add_child(_cursor_layer)
 	_cursor_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	_menu_panel = _create_panel("MenuPanel", Vector2(26, 26), Vector2(520, 0))
+	_menu_panel = _create_panel("MenuPanel", Vector2(26, 26), Vector2(520, 260))
 	var menu := VBoxContainer.new()
+	menu.position = Vector2(14, 14)
+	menu.size = _menu_panel.size - Vector2(28, 28)
+	menu.custom_minimum_size = menu.size
 	menu.add_theme_constant_override("separation", 12)
 	_menu_panel.add_child(menu)
 
@@ -78,10 +81,12 @@ func _build_ui() -> void:
 	menu.add_child(title)
 
 	_identity_label = Label.new()
+	_identity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_identity_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu.add_child(_identity_label)
 
 	_status_label = Label.new()
+	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu.add_child(_status_label)
 
@@ -103,13 +108,17 @@ func _build_ui() -> void:
 	join_row.add_child(_join_button)
 
 	var hint := Label.new()
+	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.text = "Host copies the lobby ID. Client pastes it here. The connection uses SteamMultiplayerPeer, not IP/port."
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.modulate = Color(0.78, 0.82, 0.88, 1.0)
 	menu.add_child(hint)
 
-	_session_panel = _create_panel("SessionPanel", Vector2(26, 26), Vector2(520, 0))
+	_session_panel = _create_panel("SessionPanel", Vector2(26, 26), Vector2(520, 240))
 	var session := VBoxContainer.new()
+	session.position = Vector2(14, 14)
+	session.size = _session_panel.size - Vector2(28, 28)
+	session.custom_minimum_size = session.size
 	session.add_theme_constant_override("separation", 10)
 	_session_panel.add_child(session)
 
@@ -132,6 +141,7 @@ func _create_panel(node_name: String, position: Vector2, min_size: Vector2) -> P
 	panel.name = node_name
 	panel.position = position
 	panel.custom_minimum_size = min_size
+	panel.size = min_size
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
 	return panel
@@ -196,6 +206,7 @@ func _on_leave_pressed() -> void:
 
 func _on_joined_lobby() -> void:
 	_set_joined(true)
+	_remove_cursor(LOCAL_CURSOR_ID)
 	_refresh_player_cursors()
 	_update_status("Connected. Move the mouse to broadcast your cursor.")
 
@@ -447,6 +458,9 @@ func _steam_is_running() -> bool:
 
 
 func _steam_persona_name() -> String:
+	var online = _online()
+	if online and not bool(online.steam_initialized):
+		return "Steam not initialized"
 	var steam = _steam_singleton()
 	if not steam or not _steam_is_running():
 		return "Steam unavailable"
@@ -454,6 +468,9 @@ func _steam_persona_name() -> String:
 
 
 func _steam_id() -> int:
+	var online = _online()
+	if online and not bool(online.steam_initialized):
+		return 0
 	var steam = _steam_singleton()
 	if not steam or not _steam_is_running():
 		return 0

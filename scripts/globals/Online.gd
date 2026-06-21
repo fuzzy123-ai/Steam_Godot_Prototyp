@@ -5,6 +5,7 @@ const PlayerDataResource := preload("res://scripts/player_data_resource.gd")
 const STEAM_RESULT_OK: int = 1
 const STEAM_LOBBY_TYPE_FRIENDS_ONLY: int = 1
 const STEAM_P2P_SEND_RELIABLE: int = 2
+const STEAM_RESPONSE_TIMEOUT_SECONDS := 10.0
 
 enum ErrorCodes { NO_RESPONSE, SUCCESS, FAILED, CURRENTLY_BUSY, JOIN_FAILED_SAME_OWNER_ID, STEAM_CONNECTION_ERROR }
 
@@ -21,6 +22,7 @@ var is_busy: bool = false
 var is_host: bool = false
 var is_joining: bool = false
 var steam_initialized: bool = false
+var steam_initialization_attempted: bool = false
 var steam_lobby_id: int = 0
 var players: Dictionary: # Uses multiplayer ids as keys
 	get: players.sort(); return players
@@ -34,12 +36,11 @@ func players_to_data_dicts() -> Array[Dictionary]: # Returns an array with all t
 @onready var personal_player_data: Resource: get = _get_personal_player_data # Your PlayerData resource
 
 func _ready() -> void:
-	_setup_steam_multiplayer()
 	_setup_local_multiplayer()
 
 func _process(_delta: float) -> void:
 	var steam := _steam()
-	if steam:
+	if steam_initialized and steam:
 		steam.run_callbacks()
 	_process_steam_p2p_packets()
 
@@ -122,7 +123,7 @@ func _get_personal_player_data() -> Resource:
 	if not personal_player_data:
 		personal_player_data = PlayerDataResource.new()
 		var steam := _steam()
-		if steam:
+		if steam_initialized and steam:
 			personal_player_data.steam_id = steam.getSteamID()
 			personal_player_data.display_name = steam.getPersonaName()
 		else:
@@ -142,19 +143,24 @@ func _steam() -> Object:
 func is_steam_available() -> bool:
 	return steam_initialized and _steam() != null and ClassDB.class_exists("SteamMultiplayerPeer")
 
-func _setup_steam_multiplayer() -> void:
+func ensure_steam_initialized() -> bool:
+	if steam_initialized:
+		return true
+	if steam_initialization_attempted:
+		return false
+	steam_initialization_attempted = true
 	multiplayer.server_relay = true
 	var steam := _steam()
 	if not steam:
 		push_warning("GodotSteam singleton is not available. Steam multiplayer is disabled for this run.")
-		return
+		return false
 	OS.set_environment("SteamAppID", str(STEAM_APP_ID))
 	OS.set_environment("SteamGameID", str(STEAM_APP_ID))
 	steam.steamInit(false, STEAM_APP_ID) # For some reason the autocomplete for the values are inverted but this is the correct way for now.
 	if steam.has_method("isSteamRunning") and not bool(steam.isSteamRunning()):
 		steam_initialized = false
 		push_warning("Steam client is not running or Steam API did not initialize. Steam multiplayer is disabled for this run.")
-		return
+		return false
 	steam_initialized = true
 	if personal_player_data:
 		personal_player_data.steam_id = steam.getSteamID()
@@ -166,6 +172,11 @@ func _setup_steam_multiplayer() -> void:
 		steam.lobby_joined.connect(_on_steam_lobby_join_response)
 	if not steam.join_requested.is_connected(_on_steam_join_requested):
 		steam.join_requested.connect(_on_steam_join_requested)
+	return true
+
+func retry_steam_initialization() -> bool:
+	steam_initialization_attempted = false
+	return ensure_steam_initialized()
 
 func _on_steam_lobby_created(connection_response: int, lobby_id: int) -> void:
 	match connection_response:
@@ -177,8 +188,23 @@ func _on_steam_lobby_created(connection_response: int, lobby_id: int) -> void:
 			lobby_hosting_response.emit.call_deferred(ErrorCodes.SUCCESS)
 		_: lobby_hosting_response.emit(ErrorCodes.FAILED)
 
+func _queue_lobby_host_timeout() -> void:
+	var timer := get_tree().create_timer(STEAM_RESPONSE_TIMEOUT_SECONDS)
+	timer.timeout.connect(func() -> void:
+		if is_busy and not is_host and steam_lobby_id == 0:
+			lobby_hosting_response.emit(ErrorCodes.NO_RESPONSE)
+	)
+
+func _queue_lobby_join_timeout(lobby_id: int) -> void:
+	var timer := get_tree().create_timer(STEAM_RESPONSE_TIMEOUT_SECONDS)
+	timer.timeout.connect(func() -> void:
+		if is_busy and is_joining and steam_lobby_id == lobby_id:
+			lobby_join_response.emit(ErrorCodes.NO_RESPONSE)
+	)
+
 func host_steam_lobby() -> ErrorCodes:
 	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	if not ensure_steam_initialized(): return ErrorCodes.STEAM_CONNECTION_ERROR
 	if not is_steam_available(): return ErrorCodes.STEAM_CONNECTION_ERROR
 	is_host = false
 	is_busy = true
@@ -190,6 +216,7 @@ func host_steam_lobby() -> ErrorCodes:
 	var error_response := ErrorCodes.NO_RESPONSE
 	match host_error:
 		Error.OK:
+			_queue_lobby_host_timeout()
 			_steam().createLobby(STEAM_LOBBY_TYPE_FRIENDS_ONLY, MAX_PLAYERS)
 			var hosting_response: ErrorCodes = await lobby_hosting_response
 			error_response = hosting_response
@@ -207,6 +234,7 @@ func _on_steam_join_requested(lobby_id: int, _steam_id: int) -> void: join_steam
 
 func join_steam_lobby(lobby_id: int = 0) -> ErrorCodes:
 	if is_busy: return ErrorCodes.CURRENTLY_BUSY
+	if not ensure_steam_initialized(): return ErrorCodes.STEAM_CONNECTION_ERROR
 	if not is_steam_available(): return ErrorCodes.STEAM_CONNECTION_ERROR
 	is_joining = true
 	if lobby_id != steam_lobby_id and steam_lobby_id != 0: leave_lobby()
@@ -214,6 +242,7 @@ func join_steam_lobby(lobby_id: int = 0) -> ErrorCodes:
 	steam_lobby_id = lobby_id
 	is_busy = true
 	_steam().joinLobby(lobby_id)
+	_queue_lobby_join_timeout(lobby_id)
 	var error: ErrorCodes = await lobby_join_response
 	is_joining = false
 	if error == ErrorCodes.SUCCESS: joined_lobby.emit()

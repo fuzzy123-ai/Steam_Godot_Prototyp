@@ -26,7 +26,7 @@ func _setup_color_picker() -> void:
 	_select_random_color()
 
 func _select_random_color() -> void:
-	var personal_color := Online.personal_player_data.color
+	var personal_color: Color = Online.personal_player_data.color
 	if personal_color != Color.WHITE: color_picker.color = personal_color
 	else: color_picker.color = Color.from_hsv(randf(), 0.8, 0.9)
 	color_picker.color_changed.emit(color_picker.color)

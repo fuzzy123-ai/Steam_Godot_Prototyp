@@ -21,7 +21,19 @@ Behavior:
 
 From the workspace root:
 
-`E:\Godot_With_Steam\open-vimayer-template-godot-4.7.cmd`
+`E:\Godot_With_Steam\run-steam-cursor-mvp.cmd`
+
+If Godot shows a renderer/shader-cache related startup dialog, use:
+
+`E:\Godot_With_Steam\run-steam-cursor-mvp-safe.cmd`
+
+From the project folder:
+
+`run-from-workspace.cmd`
+
+`run-from-workspace-safe.cmd`
+
+The launchers write logs to `E:\Godot_With_Steam\runtime_logs`. This avoids a Godot 4.7 startup crash seen when the engine tries to write default logs under `user://logs`.
 
 Project path:
 
@@ -52,11 +64,21 @@ Godot binary:
 
 These commands passed:
 
-`Godot_v4.7-stable_win64_console.exe --headless --path <project> --check-only --script res://scripts/globals/Online.gd`
+`Godot_v4.7-stable_win64_console.exe --headless --log-file E:\Godot_With_Steam\runtime_logs\check-online.log --path <project> --check-only --script res://scripts/globals/Online.gd`
 
-`Godot_v4.7-stable_win64_console.exe --headless --path <project> --check-only --script res://scenes/cursor_mvp/cursor_mvp.gd`
+`Godot_v4.7-stable_win64_console.exe --headless --log-file E:\Godot_With_Steam\runtime_logs\check-cursor.log --path <project> --check-only --script res://scenes/cursor_mvp/cursor_mvp.gd`
 
-`Godot_v4.7-stable_win64_console.exe --headless --path <project> --quit-after 5`
+`Godot_v4.7-stable_win64_console.exe --log-file E:\Godot_With_Steam\runtime_logs\boot-default.log --path <project> --quit-after 5`
+
+`Godot_v4.7-stable_win64_console.exe --log-file E:\Godot_With_Steam\runtime_logs\boot-safe.log --rendering-driver opengl3_angle --rendering-method gl_compatibility --path <project> --quit-after 5`
+
+Godot MCP verified:
+
+- Main scene starts.
+- `Host Steam Lobby` initializes Steam for user `Fuzzy`.
+- A Spacewar app ID `480` lobby is created.
+- Runtime state after hosting: `steam_initialized=true`, `is_busy=false`, `is_host=true`, one registered player.
+- Mouse movement updates the local hosted cursor marker.
 
 Headless run note:
 

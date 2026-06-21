@@ -255,7 +255,7 @@ func _update_nick_label() -> void:
 	nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
 	if not multiplayer.has_multiplayer_peer() or is_multiplayer_authority():
 		nick_label.visible = multiplayer.has_multiplayer_peer() and not is_multiplayer_authority()
-		var nickname := Online.personal_player_data.display_name
+		var nickname: String = Online.personal_player_data.display_name
 		if not Online.steam_lobby_id and multiplayer.has_multiplayer_peer():
 			var player_number := 0
 			for mult_id: int in Online.players:
